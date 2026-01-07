@@ -40,12 +40,6 @@ export default function WorkspaceSelector() {
         );
         const activeWorkspaces = workspacesData.filter(w => w && w.status === 'active');
         setWorkspaces(activeWorkspaces);
-
-        // Auto-redirect if only one workspace
-        if (activeWorkspaces.length === 1) {
-          handleSelectWorkspace(activeWorkspaces[0]);
-          return;
-        }
       }
     } catch (error) {
       console.error('Failed to load workspaces:', error);

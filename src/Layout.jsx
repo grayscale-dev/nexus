@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { name: 'Feedback', icon: MessageSquareText, page: 'Feedback' },
   { name: 'Roadmap', icon: Map, page: 'Roadmap' },
+  { name: 'Changelog', icon: MessageSquareText, page: 'Changelog' },
   { name: 'Support', icon: HeadphonesIcon, page: 'Support', requiresSupport: true },
 ];
 
@@ -33,7 +34,7 @@ export default function Layout({ children, currentPageName }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Pages that don't need workspace context
-  const noWorkspacePages = ['WorkspaceSelector'];
+  const noWorkspacePages = ['WorkspaceSelector', 'PublicWorkspaceSelector', 'Landing'];
   const needsWorkspace = !noWorkspacePages.includes(currentPageName);
 
   useEffect(() => {
@@ -91,8 +92,8 @@ export default function Layout({ children, currentPageName }) {
   const isAdmin = role === 'admin';
   const isStaff = ['support', 'admin'].includes(role);
 
-  // No layout for workspace selector
-  if (currentPageName === 'WorkspaceSelector') {
+  // No layout for landing or workspace selectors
+  if (['Landing', 'WorkspaceSelector', 'PublicWorkspaceSelector'].includes(currentPageName)) {
     return children;
   }
 
