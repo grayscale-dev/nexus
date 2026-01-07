@@ -199,6 +199,56 @@ export default function WorkspaceSelector() {
             ))}
           </div>
         )}
+
+        {/* Create Workspace Modal */}
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Workspace</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Workspace Name</Label>
+                <Input
+                  value={newWorkspace.name}
+                  onChange={(e) => setNewWorkspace({ ...newWorkspace, name: e.target.value })}
+                  placeholder="e.g., Product Feedback"
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <Label>Slug (URL-friendly)</Label>
+                <Input
+                  value={newWorkspace.slug}
+                  onChange={(e) => setNewWorkspace({ ...newWorkspace, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                  placeholder="e.g., product-feedback"
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <Label>Description (Optional)</Label>
+                <Textarea
+                  value={newWorkspace.description}
+                  onChange={(e) => setNewWorkspace({ ...newWorkspace, description: e.target.value })}
+                  placeholder="Brief description of this workspace"
+                  className="mt-1.5"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button variant="ghost" onClick={() => setShowCreateModal(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateWorkspace}
+                  disabled={!newWorkspace.name || !newWorkspace.slug || creating}
+                  className="bg-slate-900 hover:bg-slate-800"
+                >
+                  {creating ? 'Creating...' : 'Create Workspace'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
