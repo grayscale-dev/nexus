@@ -27,6 +27,7 @@ export default function Changelog() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState(null);
   const [newEntry, setNewEntry] = useState({
     title: '',
     description: '',

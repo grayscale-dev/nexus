@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, MessageSquare, Plus, Edit2, Trash2, Send, Sparkles } from 'lucide-react';
 import { createPageUrl } from '@/utils';
+import LinksPanel from '@/components/common/LinksPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

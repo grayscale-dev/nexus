@@ -4,6 +4,7 @@ import {
   Tag, AlertCircle, Link as LinkIcon, Plus, Edit2, Send, Map, Sparkles 
 } from 'lucide-react';
 import AddToRoadmapModal from './AddToRoadmapModal';
+import LinksPanel from '@/components/common/LinksPanel';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -193,16 +194,19 @@ export default function FeedbackDetail({
             </div>
           )}
 
-          {/* Roadmap link */}
-          {feedback.roadmap_item_id && (
-            <a
-              href={`${createPageUrl('Roadmap')}?item=${feedback.roadmap_item_id}`}
-              className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center gap-2 hover:bg-purple-100 transition-colors"
-            >
-              <Map className="h-4 w-4 text-purple-600" />
-              <span className="text-sm text-purple-900 font-medium">This feedback is on the roadmap →</span>
-            </a>
-          )}
+          {/* Links Panel */}
+          <LinksPanel
+            workspaceId={sessionStorage.getItem('selectedWorkspaceId')}
+            itemType="feedback"
+            itemId={feedback.id}
+            links={{
+              roadmap_item_ids: feedback.roadmap_item_ids || [],
+              changelog_entry_ids: feedback.changelog_entry_ids || [],
+              doc_page_ids: feedback.doc_page_ids || []
+            }}
+            onUpdate={onUpdate}
+            isStaff={isStaff}
+          />
         </div>
 
         {/* Description */}
