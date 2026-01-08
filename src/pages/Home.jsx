@@ -60,9 +60,11 @@ export default function Home() {
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">N</span>
-            </div>
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/695ee36fb2c36c191b58c83e/678f5e1e6_create-a-svg-like-these-except-it-is-rock-on-symbo.png" 
+              alt="Nexus" 
+              className="h-8 w-8 object-contain"
+            />
             <span className="text-lg font-bold text-slate-900">Nexus</span>
           </div>
           <Button 
