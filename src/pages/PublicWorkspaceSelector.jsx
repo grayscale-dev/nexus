@@ -15,7 +15,16 @@ export default function PublicWorkspaceSelector() {
   useEffect(() => {
     // Mark this as public access
     sessionStorage.setItem('isPublicAccess', 'true');
-    loadPublicWorkspaces();
+    
+    // Check for workspace slug in URL
+    const params = new URLSearchParams(window.location.search);
+    const workspaceSlug = params.get('workspace');
+    
+    if (workspaceSlug) {
+      loadAndSelectWorkspace(workspaceSlug);
+    } else {
+      loadPublicWorkspaces();
+    }
   }, []);
 
   const loadPublicWorkspaces = async () => {
@@ -30,6 +39,25 @@ export default function PublicWorkspaceSelector() {
       console.error('Failed to load workspaces:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAndSelectWorkspace = async (slug) => {
+    try {
+      const workspaces = await base44.entities.Workspace.filter({ 
+        slug: slug,
+        status: 'active' 
+      });
+      
+      if (workspaces.length > 0) {
+        handleSelectWorkspace(workspaces[0]);
+      } else {
+        // If workspace not found, show all public workspaces
+        loadPublicWorkspaces();
+      }
+    } catch (error) {
+      console.error('Failed to load workspace:', error);
+      loadPublicWorkspaces();
     }
   };
 
