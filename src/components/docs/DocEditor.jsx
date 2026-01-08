@@ -49,7 +49,8 @@ export default function DocEditor({ doc, onSave }) {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-slate-900 hover:bg-slate-800 mt-6"
+          style={{ backgroundColor: JSON.parse(sessionStorage.getItem('selectedWorkspace') || '{}').primary_color || '#0f172a' }}
+          className="hover:opacity-90 text-white mt-6"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>

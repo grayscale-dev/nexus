@@ -218,7 +218,8 @@ export default function AddToRoadmapModal({
             <Button 
               onClick={handleSave}
               disabled={(mode === 'new' && !title) || (mode === 'existing' && !selectedItemId) || saving}
-              className="bg-slate-900 hover:bg-slate-800"
+              style={{ backgroundColor: JSON.parse(sessionStorage.getItem('selectedWorkspace') || '{}').primary_color || '#0f172a' }}
+              className="hover:opacity-90 text-white"
             >
               {saving ? 'Saving...' : (
                 <>

@@ -176,7 +176,8 @@ export default function NewThreadModal({ isOpen, onClose, workspaceId, onSuccess
             <Button 
               type="submit" 
               disabled={!subject || !message || submitting}
-              className="bg-slate-900 hover:bg-slate-800"
+              style={{ backgroundColor: JSON.parse(sessionStorage.getItem('selectedWorkspace') || '{}').primary_color || '#0f172a' }}
+              className="hover:opacity-90 text-white"
             >
               {submitting ? 'Creating...' : (
                 <>

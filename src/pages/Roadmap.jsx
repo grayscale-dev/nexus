@@ -137,7 +137,8 @@ export default function Roadmap() {
         {isStaff && (
           <Button 
             onClick={() => handleCreateItem('planned')}
-            className="bg-slate-900 hover:bg-slate-800"
+            style={{ backgroundColor: workspace?.primary_color || '#0f172a' }}
+            className="hover:opacity-90 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Item

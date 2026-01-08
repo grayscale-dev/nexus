@@ -258,7 +258,8 @@ export default function RoadmapItemModal({
                 <Button 
                   onClick={handleSave} 
                   disabled={!title || saving}
-                  className="bg-slate-900 hover:bg-slate-800"
+                  style={{ backgroundColor: JSON.parse(sessionStorage.getItem('selectedWorkspace') || '{}').primary_color || '#0f172a' }}
+                  className="hover:opacity-90 text-white"
                 >
                   {saving ? 'Saving...' : (isNew ? 'Create Item' : 'Save Changes')}
                 </Button>
@@ -340,7 +341,8 @@ export default function RoadmapItemModal({
                         onClick={handlePostUpdate}
                         disabled={!updateContent.trim() || postingUpdate}
                         size="sm"
-                        className="bg-slate-900 hover:bg-slate-800"
+                        style={{ backgroundColor: JSON.parse(sessionStorage.getItem('selectedWorkspace') || '{}').primary_color || '#0f172a' }}
+                        className="hover:opacity-90 text-white"
                       >
                         <Send className="h-4 w-4 mr-1" />
                         {postingUpdate ? 'Posting...' : 'Post Update'}
