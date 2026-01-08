@@ -146,9 +146,15 @@ export default function Layout({ children, currentPageName }) {
                       <DropdownMenuItem 
                         key={ws.id} 
                         onClick={() => handleWorkspaceSwitch(ws)}
-                        className="cursor-pointer"
+                        className="cursor-pointer flex items-center"
                       >
-                        <Folder className="h-4 w-4 mr-2 text-slate-500" />
+                        {ws.logo_url ? (
+                          <img src={ws.logo_url} alt={ws.name} className="h-4 w-4 mr-2 object-contain" />
+                        ) : (
+                          <div className="h-4 w-4 mr-2 rounded" style={{ backgroundColor: ws.primary_color || '#0f172a' }}>
+                            <Folder className="h-3 w-3 text-white" style={{ transform: 'scale(0.75)' }} />
+                          </div>
+                        )}
                         <span>{ws.name}</span>
                         {ws.id === workspace.id && (
                           <span className="ml-auto text-xs text-slate-400">Current</span>

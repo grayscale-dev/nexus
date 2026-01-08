@@ -239,9 +239,9 @@ export default function WorkspaceSettings() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Workspace Settings</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Board Settings</h1>
           <p className="text-slate-500 mt-1">
-            Manage your workspace configuration and access
+            Manage your board configuration and access
           </p>
         </div>
       </div>
@@ -266,11 +266,11 @@ export default function WorkspaceSettings() {
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
-              <CardDescription>Update your workspace details</CardDescription>
+              <CardDescription>Update your board details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Workspace Name</Label>
+                <Label>Board Name</Label>
                 <Input 
                   value={name} 
                   onChange={(e) => setName(e.target.value)}
@@ -287,7 +287,7 @@ export default function WorkspaceSettings() {
                 />
               </div>
               <div>
-                <Label>Workspace Logo</Label>
+                <Label>Board Logo</Label>
                 <div className="flex items-center gap-4 mt-1.5">
                   {logoUrl && (
                     <img src={logoUrl} alt="Logo" className="h-12 w-12 object-contain rounded-lg border border-slate-200" />
@@ -329,7 +329,7 @@ export default function WorkspaceSettings() {
                 </div>
               </div>
               <div>
-                <Label>Workspace URL</Label>
+                <Label>Board Invite URL</Label>
                 <div className="mt-1.5 max-w-md flex gap-2">
                   <Input 
                     value={`${window.location.origin}${createPageUrl('JoinWorkspace')}?workspace=${workspace?.slug || ''}`}
@@ -346,7 +346,7 @@ export default function WorkspaceSettings() {
                   </Button>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Share this URL to allow users to join your workspace
+                  Share this URL to allow users to join your board
                 </p>
               </div>
             </CardContent>
@@ -355,7 +355,7 @@ export default function WorkspaceSettings() {
           <Card>
             <CardHeader>
               <CardTitle>Features</CardTitle>
-              <CardDescription>Enable or disable workspace features</CardDescription>
+              <CardDescription>Enable or disable board features</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between max-w-md">
@@ -398,7 +398,25 @@ export default function WorkspaceSettings() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end">
+          <div className="flex justify-between">
+            <Button 
+              variant="destructive"
+              onClick={async () => {
+                if (!confirm('Are you sure you want to delete this board? This action cannot be undone and will remove all data including feedback, roadmap items, and documentation.')) return;
+                try {
+                  await base44.entities.Workspace.update(workspace.id, { status: 'archived' });
+                  sessionStorage.clear();
+                  navigate(createPageUrl('Workspaces'));
+                } catch (error) {
+                  console.error('Failed to delete board:', error);
+                  alert('Failed to delete board. Please try again.');
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Board
+            </Button>
             <Button 
               onClick={handleSaveSettings}
               disabled={saving}
