@@ -63,7 +63,7 @@ export default function PublicWorkspaceSelector() {
           });
           
           if (existingRoles.length === 0) {
-            // Add user as viewer
+            // Add user as viewer so it shows in their library
             await base44.entities.WorkspaceRole.create({
               workspace_id: workspace.id,
               user_id: user.id,
@@ -72,17 +72,12 @@ export default function PublicWorkspaceSelector() {
               assigned_via: 'explicit'
             });
           }
-          
-          // Navigate to workspace in management mode
-          sessionStorage.removeItem('isPublicAccess');
-          sessionStorage.setItem('selectedWorkspaceId', workspace.id);
-          sessionStorage.setItem('selectedWorkspace', JSON.stringify(workspace));
-          sessionStorage.setItem('currentRole', existingRoles[0]?.role || 'viewer');
-          navigate(createPageUrl('Feedback'));
         } catch (authError) {
-          // User not authenticated - show in public view
-          handleSelectWorkspace(workspace);
+          // User not authenticated - that's fine, continue in public view
         }
+        
+        // Always navigate in public/customer view
+        handleSelectWorkspace(workspace);
       } else {
         // If workspace not found, show all public workspaces
         loadPublicWorkspaces();
