@@ -88,50 +88,37 @@ export default function Landing() {
           </button>
 
           {/* Management Access */}
-          <button
-            onClick={handleManagementAccess}
-            className="bg-white/10 backdrop-blur-sm border-2 border-purple-400/30 rounded-2xl p-8 hover:bg-white/15 hover:border-purple-400/50 transition-all text-left group"
-          >
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-purple-500/20 rounded-xl group-hover:bg-purple-500/30 transition-colors">
-                <Settings className="h-8 w-8 text-purple-300" />
+          <div className="flex items-end">
+            <button
+              onClick={handleManagementAccess}
+              className="bg-white/5 backdrop-blur-sm border border-slate-600/30 rounded-xl p-6 hover:bg-white/10 hover:border-slate-500/50 transition-all text-left group w-full"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-slate-500/20 rounded-lg group-hover:bg-slate-500/30 transition-colors">
+                  <Settings className="h-6 w-6 text-slate-300" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Manage Workspaces</h3>
+                  <p className="text-xs text-slate-400 flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    Requires authentication
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">Admin Portal</h2>
-                <p className="text-sm text-purple-200 flex items-center gap-1">
-                  <Lock className="h-3 w-3" />
-                  Requires authentication
-                </p>
+              <p className="text-sm text-slate-400 mb-4">
+                Create or manage your workspaces, configure settings, and collaborate with your team.
+              </p>
+              <div className="flex items-center text-slate-300 text-sm font-medium group-hover:translate-x-1 transition-transform">
+                Go to Management
+                <span className="ml-2">→</span>
               </div>
-            </div>
-            <ul className="space-y-3 mb-6">
-              <li className="flex items-start gap-2 text-slate-300">
-                <span className="text-purple-400 mt-0.5">✓</span>
-                <span>Create and manage workspaces</span>
-              </li>
-              <li className="flex items-start gap-2 text-slate-300">
-                <span className="text-purple-400 mt-0.5">✓</span>
-                <span>Configure settings and permissions</span>
-              </li>
-              <li className="flex items-start gap-2 text-slate-300">
-                <span className="text-purple-400 mt-0.5">✓</span>
-                <span>Moderate and respond to feedback</span>
-              </li>
-              <li className="flex items-start gap-2 text-slate-300">
-                <span className="text-purple-400 mt-0.5">✓</span>
-                <span>Manage roadmap and releases</span>
-              </li>
-            </ul>
-            <div className="flex items-center text-purple-300 font-medium group-hover:translate-x-2 transition-transform">
-              Enter Admin Portal
-              <span className="ml-2">→</span>
-            </div>
-          </button>
+            </button>
+          </div>
         </div>
         
         <div className="mt-8 text-center">
           <p className="text-sm text-slate-400">
-            Not sure which to choose? Use <span className="text-blue-300">Customer Portal</span> to view and submit feedback
+            Most users want the <span className="text-blue-300 font-medium">Customer Portal</span> to view feedback and roadmaps
           </p>
         </div>
       </div>
