@@ -280,7 +280,7 @@ export default function SupportThreadDetail({
                 isInternal 
                   ? 'bg-amber-50 border border-amber-200' 
                   : isOwnMessage 
-                    ? 'bg-slate-900 text-white' 
+                    ? 'bg-slate-100 border border-slate-200' 
                     : message.is_staff_reply
                       ? 'bg-blue-50 border border-blue-100'
                       : 'bg-white border border-slate-200'
