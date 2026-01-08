@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Folder, Plus, LogOut, User } from 'lucide-react';
+import { Folder, Plus, LogOut, User, Settings, Shield } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -142,7 +142,13 @@ export default function WorkspaceSelector() {
             <span className="text-lg font-semibold text-slate-900">Workspaces</span>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {isTenantAdmin && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg">
+                <Shield className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium text-purple-700">Tenant Admin</span>
+              </div>
+            )}
             {user && (
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 <User className="h-4 w-4" />
@@ -164,20 +170,42 @@ export default function WorkspaceSelector() {
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              Select a Workspace
-            </h1>
-            <p className="text-slate-500">
-              Choose a workspace to view feedback, roadmap, and support.
-            </p>
+        <div className="mb-8">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">
+                Workspace Management
+              </h1>
+              <p className="text-slate-500">
+                Choose a workspace to manage or create a new one.
+              </p>
+            </div>
+            {isTenantAdmin && (
+              <Button onClick={() => setShowCreateModal(true)} className="bg-slate-900 hover:bg-slate-800">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Workspace
+              </Button>
+            )}
           </div>
+          
           {isTenantAdmin && (
-            <Button onClick={() => setShowCreateModal(true)} className="bg-slate-900 hover:bg-slate-800">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Workspace
-            </Button>
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Shield className="h-5 w-5 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-purple-900 mb-1">Admin Controls</h3>
+                  <p className="text-sm text-purple-700 mb-3">
+                    You have full administrative access. You can create new workspaces, manage all settings, and configure access controls.
+                  </p>
+                  <div className="flex items-center gap-2 text-sm text-purple-600">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings and controls available within each workspace</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
