@@ -116,7 +116,8 @@ export default function LinksPanel({
       feedback: 'feedback_ids',
       roadmap: 'roadmap_item_ids',
       changelog: 'changelog_entry_ids',
-      docs: 'doc_page_ids'
+      docs: 'doc_page_ids',
+      support: 'support_thread_ids'
     };
 
     const field = fieldMap[linkType];
@@ -133,7 +134,8 @@ export default function LinksPanel({
       feedback: 'feedback_ids',
       roadmap: 'roadmap_item_ids',
       changelog: 'changelog_entry_ids',
-      docs: 'doc_page_ids'
+      docs: 'doc_page_ids',
+      support: 'support_thread_ids'
     };
 
     const field = fieldMap[type];
