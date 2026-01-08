@@ -159,7 +159,7 @@ export default function Layout({ children, currentPageName }) {
                     <DropdownMenuItem asChild>
                       <Link to={createPageUrl('Workspaces')} className="cursor-pointer">
                         <ArrowLeft className="h-4 w-4 mr-2" />
-                        All workspaces
+                        All boards
                       </Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>

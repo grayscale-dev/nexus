@@ -204,11 +204,11 @@ export default function Workspaces() {
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-slate-900 rounded-xl">
-              <Folder className="h-5 w-5 text-white" />
+              <div className="p-2 bg-slate-900 rounded-xl">
+                <Folder className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-lg font-semibold text-slate-900">Your Boards</span>
             </div>
-            <span className="text-lg font-semibold text-slate-900">Your Workspaces</span>
-          </div>
           
           <div className="flex items-center gap-3">
             {user && (
@@ -237,12 +237,12 @@ export default function Workspaces() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                Your Workspaces
+                Your Boards
               </h1>
               <p className="text-slate-500">
                 {workspaces.length > 0 
-                  ? `You have access to ${workspaces.length} workspace${workspaces.length === 1 ? '' : 's'}`
-                  : 'Join or create a workspace to get started'}
+                  ? `You have access to ${workspaces.length} board${workspaces.length === 1 ? '' : 's'}`
+                  : 'Join or create a board to get started'}
               </p>
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function Workspaces() {
               className="bg-slate-900 hover:bg-slate-800"
             >
               <LinkIcon className="h-4 w-4 mr-2" />
-              Join a Workflow
+              Join a Board
             </Button>
             <Button 
               onClick={() => setShowCreateModal(true)}
@@ -262,12 +262,12 @@ export default function Workspaces() {
               variant="outline"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Create a Workflow
+              Create a Board
             </Button>
           </div>
         </div>
 
-        {/* Workspaces Grid */}
+        {/* Boards Grid */}
         {workspaces.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {workspaces.map((workspace) => (
@@ -281,11 +281,11 @@ export default function Workspaces() {
           </div>
         )}
 
-        {/* Join Workflow Modal */}
+        {/* Join Board Modal */}
         <Dialog open={showJoinModal} onOpenChange={setShowJoinModal}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Join a Workflow</DialogTitle>
+              <DialogTitle>Join a Board</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -293,14 +293,14 @@ export default function Workspaces() {
                 <Input
                   value={joinLink}
                   onChange={(e) => setJoinLink(e.target.value)}
-                  placeholder="Paste invite link or enter workspace code"
+                  placeholder="Paste invite link or enter board code"
                   className="mt-1.5"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleJoinWorkflow();
                   }}
                 />
                 <p className="text-xs text-slate-500 mt-2">
-                  Example: workspace-slug or full URL
+                  Example: board-slug or full URL
                 </p>
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -325,15 +325,15 @@ export default function Workspaces() {
           </DialogContent>
         </Dialog>
 
-        {/* Create Workspace Modal */}
+        {/* Create Board Modal */}
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Create New Workflow</DialogTitle>
+              <DialogTitle>Create New Board</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Workflow Name</Label>
+                <Label>Board Name</Label>
                 <Input
                   value={newWorkspace.name}
                   onChange={(e) => setNewWorkspace({ ...newWorkspace, name: e.target.value })}
@@ -355,7 +355,7 @@ export default function Workspaces() {
                 <Textarea
                   value={newWorkspace.description}
                   onChange={(e) => setNewWorkspace({ ...newWorkspace, description: e.target.value })}
-                  placeholder="Brief description of this workflow"
+                  placeholder="Brief description of this board"
                   className="mt-1.5"
                 />
               </div>
@@ -368,7 +368,7 @@ export default function Workspaces() {
                   disabled={!newWorkspace.name || !newWorkspace.slug || creating}
                   className="bg-slate-900 hover:bg-slate-800"
                 >
-                  {creating ? 'Creating...' : 'Create Workflow'}
+                  {creating ? 'Creating...' : 'Create Board'}
                 </Button>
               </div>
             </div>
