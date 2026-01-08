@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import Badge from '@/components/common/Badge';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import EmptyState from '@/components/common/EmptyState';
+import LinksPanel from '@/components/common/LinksPanel';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
