@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link2, Plus, X, MessageSquare, Map, Sparkles, BookOpen } from 'lucide-react';
+import { Link2, Plus, X, MessageSquare, Map, Sparkles, BookOpen, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,7 @@ export default function LinksPanel({
   const [availableItems, setAvailableItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [linkedData, setLinkedData] = useState({});
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     loadLinkedData();
@@ -150,13 +152,22 @@ export default function LinksPanel({
   const hasLinks = Object.values(linkedData).some(arr => arr?.length > 0);
 
   return (
-    <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+    <div className="mt-6 bg-slate-50 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors"
+        >
+          <ChevronRight className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-90")} />
           <Link2 className="h-4 w-4" />
           Related Items
-        </h4>
-        {isStaff && (
+          {hasLinks && (
+            <span className="text-xs text-slate-500 font-normal">
+              ({Object.values(linkedData).reduce((sum, arr) => sum + (arr?.length || 0), 0)})
+            </span>
+          )}
+        </button>
+        {isStaff && isExpanded && (
           <Select onValueChange={handleOpenAddModal}>
             <SelectTrigger className="w-32 h-8">
               <Plus className="h-3 w-3 mr-1" />
@@ -181,12 +192,12 @@ export default function LinksPanel({
         )}
       </div>
 
-      {!hasLinks && (
+      {isExpanded && !hasLinks && (
         <p className="text-xs text-slate-400">No linked items yet</p>
       )}
 
       {/* Display linked items */}
-      {Object.entries(linkedData).map(([type, items]) => {
+      {isExpanded && Object.entries(linkedData).map(([type, items]) => {
         if (!items?.length) return null;
         const config = linkTypeConfig[type];
         const Icon = config.icon;
