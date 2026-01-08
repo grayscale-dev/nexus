@@ -50,7 +50,39 @@ export default function PublicWorkspaceSelector() {
       });
       
       if (workspaces.length > 0) {
-        handleSelectWorkspace(workspaces[0]);
+        const workspace = workspaces[0];
+        
+        // Check if user is authenticated
+        try {
+          const user = await base44.auth.me();
+          
+          // User is authenticated - add them to the workspace if not already a member
+          const existingRoles = await base44.entities.WorkspaceRole.filter({
+            workspace_id: workspace.id,
+            user_id: user.id
+          });
+          
+          if (existingRoles.length === 0) {
+            // Add user as viewer
+            await base44.entities.WorkspaceRole.create({
+              workspace_id: workspace.id,
+              user_id: user.id,
+              email: user.email,
+              role: 'viewer',
+              assigned_via: 'explicit'
+            });
+          }
+          
+          // Navigate to workspace in management mode
+          sessionStorage.removeItem('isPublicAccess');
+          sessionStorage.setItem('selectedWorkspaceId', workspace.id);
+          sessionStorage.setItem('selectedWorkspace', JSON.stringify(workspace));
+          sessionStorage.setItem('currentRole', existingRoles[0]?.role || 'viewer');
+          navigate(createPageUrl('Feedback'));
+        } catch (authError) {
+          // User not authenticated - show in public view
+          handleSelectWorkspace(workspace);
+        }
       } else {
         // If workspace not found, show all public workspaces
         loadPublicWorkspaces();
