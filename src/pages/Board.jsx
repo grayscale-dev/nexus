@@ -1,60 +1,92 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
+// Import all section components
+import Feedback from './Feedback';
+import Roadmap from './Roadmap';
+import Changelog from './Changelog';
+import Docs from './Docs';
+import Support from './Support';
+import WorkspaceSettings from './WorkspaceSettings';
+import ApiDocs from './ApiDocs';
+
 /**
- * Canonical Board Router
- * Route: /board/:slug/:section?
+ * Board Router
  * 
- * This replaces the old auth-first flow:
- * OLD: Login → Workspaces → Select → Board
- * NEW: Direct link → Board (with contextual auth)
- * 
- * Flow:
- * 1. Load workspace by slug (unauthenticated)
- * 2. Check visibility:
- *    - Public: Show board immediately (read-only for unauth)
- *    - Private: Redirect to login with nextUrl
- * 3. For authenticated users, check role and grant appropriate access
+ * Matches: /board/:slug/:section
+ * - Parses slug and section from URL
+ * - Loads workspace and user context
+ * - Renders the appropriate section component
  */
 export default function Board() {
-  const { slug, section = 'feedback' } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [slug, setSlug] = useState(null);
+  const [section, setSection] = useState(null);
+
+  // Map of section names to components
+  const sectionComponents = {
+    feedback: Feedback,
+    roadmap: Roadmap,
+    changelog: Changelog,
+    docs: Docs,
+    support: Support,
+    settings: WorkspaceSettings,
+    api: ApiDocs,
+  };
 
   useEffect(() => {
-    resolveBoard();
-  }, [slug]);
+    initializeBoard();
+  }, []);
 
-  const resolveBoard = async () => {
+  const initializeBoard = async () => {
     try {
-      // Step 1: Load workspace by slug (public endpoint, no auth required)
-      const response = await base44.functions.invoke('publicGetWorkspace', { slug });
+      // Parse URL path: /board/:slug/:section
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
       
-      if (!response.data) {
-        setError('Board not found');
+      if (pathParts[0] !== 'board' || pathParts.length < 3) {
+        setError('Invalid board URL');
         setLoading(false);
         return;
       }
 
-      const workspace = response.data;
+      const boardSlug = pathParts[1];
+      const boardSection = pathParts[2];
 
-      // Step 2: Check if workspace is public
-      if (workspace.visibility === 'public') {
-        // Public board - allow access regardless of auth status
-        // Try to get authenticated user for role-based features
+      // Validate section exists
+      if (!sectionComponents[boardSection]) {
+        setError(`Unknown section: ${boardSection}`);
+        setLoading(false);
+        return;
+      }
+
+      setSlug(boardSlug);
+      setSection(boardSection);
+
+      // Load workspace context via public endpoint
+      try {
+        const { data: workspace } = await base44.functions.invoke('publicGetWorkspace', {
+          slug: boardSlug
+        });
+
+        if (!workspace) {
+          setError('Board not found');
+          setLoading(false);
+          return;
+        }
+
+        // Try to get user role if authenticated
         let user = null;
         let role = 'viewer';
-        let isPublicAccess = true;
+        let isPublicAccess = false;
 
         try {
           user = await base44.auth.me();
-          
-          // Check if authenticated user has a role
+
+          // Check if user has a role in this workspace
           const roles = await base44.entities.WorkspaceRole.filter({
             workspace_id: workspace.id,
             user_id: user.id
@@ -63,66 +95,44 @@ export default function Board() {
           if (roles.length > 0) {
             role = roles[0].role;
             isPublicAccess = false;
+          } else {
+            // Authenticated but no explicit role
+            role = 'viewer';
+            isPublicAccess = true;
           }
-        } catch (error) {
-          // Not authenticated, proceed as public viewer
+        } catch (authError) {
+          // Not authenticated - public access
+          if (workspace.visibility !== 'public') {
+            // Private workspace and not authenticated
+            setError('This board is private. Please log in to access it.');
+            setLoading(false);
+            return;
+          }
+          isPublicAccess = true;
         }
 
-        // Set workspace context
-        sessionStorage.setItem('selectedWorkspaceId', workspace.id);
+        // Store workspace context in sessionStorage for layout and components
         sessionStorage.setItem('selectedWorkspace', JSON.stringify(workspace));
+        sessionStorage.setItem('selectedWorkspaceId', workspace.id);
         sessionStorage.setItem('currentRole', role);
         sessionStorage.setItem('isPublicAccess', isPublicAccess.toString());
 
-        // Navigate to canonical board-scoped section
-        navigate(`/board/${slug}/${section}`, { replace: true });
-
-      } else {
-        // Private board - require authentication
-        const isAuthenticated = await base44.auth.isAuthenticated();
-
-        if (!isAuthenticated) {
-          // Redirect to login with return URL
-          const returnUrl = `${window.location.origin}/board/${slug}/${section}`;
-          base44.auth.redirectToLogin(returnUrl);
-          return;
-        }
-
-        // User is authenticated, check if they have access
-        const user = await base44.auth.me();
-        const roles = await base44.entities.WorkspaceRole.filter({
-          workspace_id: workspace.id,
-          user_id: user.id
-        });
-
-        if (roles.length === 0) {
-          // No access to private board
-          setError('You don\'t have access to this board. Please contact the admin.');
-          setLoading(false);
-          return;
-        }
-
-        // User has access
-        const role = roles[0].role;
-        sessionStorage.setItem('selectedWorkspaceId', workspace.id);
-        sessionStorage.setItem('selectedWorkspace', JSON.stringify(workspace));
-        sessionStorage.setItem('currentRole', role);
-        sessionStorage.removeItem('isPublicAccess');
-
-        // Navigate to canonical board-scoped section
-        navigate(`/board/${slug}/${section}`, { replace: true });
+        setLoading(false);
+      } catch (contextError) {
+        console.error('Failed to load board context:', contextError);
+        setError('Failed to load board');
+        setLoading(false);
       }
-
     } catch (error) {
-      console.error('Board resolution error:', error);
-      setError('Failed to load board. Please try again.');
+      console.error('Board initialization error:', error);
+      setError('An error occurred');
       setLoading(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <LoadingSpinner size="lg" text="Loading board..." />
       </div>
     );
@@ -130,16 +140,13 @@ export default function Board() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 p-6">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-          <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">⚠️</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Unable to Load Board</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Oops!</h2>
           <p className="text-slate-600 mb-6">{error}</p>
           <button
-            onClick={() => navigate(createPageUrl('Home'))}
-            className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg"
+            onClick={() => navigate('/')}
+            className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800"
           >
             Go Home
           </button>
@@ -148,5 +155,18 @@ export default function Board() {
     );
   }
 
-  return null;
+  // Render the appropriate section component
+  const SectionComponent = sectionComponents[section];
+  
+  if (!SectionComponent) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-slate-900">Section not found</h2>
+        </div>
+      </div>
+    );
+  }
+
+  return <SectionComponent />;
 }
