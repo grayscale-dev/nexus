@@ -20,6 +20,7 @@ import Badge from '@/components/common/Badge';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
+import { useProfileGuard } from '@/components/auth/useProfileGuard';
 
 const statusOptions = [
   { value: 'open', label: 'Open' },
@@ -47,6 +48,7 @@ export default function FeedbackDetail({
   onUpdate,
   onAddToRoadmap 
 }) {
+  const { guardAction, ProfileGuard } = useProfileGuard();
   const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [editingMeta, setEditingMeta] = useState(false);
@@ -59,8 +61,6 @@ export default function FeedbackDetail({
     
     setSubmitting(true);
     try {
-      const user = await base44.auth.me();
-      
       // Check if user has permission to reply
       const isPublicAccess = sessionStorage.getItem('isPublicAccess') === 'true';
       if (isPublicAccess) {
@@ -68,20 +68,29 @@ export default function FeedbackDetail({
         setSubmitting(false);
         return;
       }
-      
-      await base44.entities.FeedbackResponse.create({
-        feedback_id: feedback.id,
-        workspace_id: feedback.workspace_id,
-        content: replyContent,
-        author_id: user.id,
-        is_official: isStaff,
-        author_role: isStaff ? 'support' : 'user',
+
+      await guardAction(async () => {
+        const user = await base44.auth.me();
+        
+        await base44.entities.FeedbackResponse.create({
+          feedback_id: feedback.id,
+          workspace_id: feedback.workspace_id,
+          content: replyContent,
+          author_id: user.id,
+          is_official: isStaff,
+          author_role: isStaff ? 'support' : 'user',
+        });
+        
+        setReplyContent('');
+        onUpdate?.();
       });
-      setReplyContent('');
-      onUpdate?.();
     } catch (error) {
-      console.error('Failed to submit reply:', error);
-      alert('Failed to submit reply. Please ensure you have permission.');
+      if (error.message === 'Profile completion cancelled') {
+        // User cancelled - don't show error
+      } else {
+        console.error('Failed to submit reply:', error);
+        alert('Failed to submit reply. Please ensure you have permission.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -107,7 +116,9 @@ export default function FeedbackDetail({
   const typeInfo = typeConfig[feedback.type] || typeConfig.bug;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <>
+      <ProfileGuard />
+      <div className="max-w-4xl mx-auto">
       <Button variant="ghost" onClick={onBack} className="mb-6 text-slate-600">
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Feedback
@@ -365,5 +376,6 @@ export default function FeedbackDetail({
         onSuccess={onUpdate}
       />
     </div>
+    </>
   );
 }

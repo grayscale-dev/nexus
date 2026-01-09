@@ -89,7 +89,9 @@ export default function NewThreadModal({ isOpen, onClose, workspaceId, onSuccess
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      <ProfileGuard />
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>New Support Request</DialogTitle>
@@ -190,5 +192,6 @@ export default function NewThreadModal({ isOpen, onClose, workspaceId, onSuccess
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

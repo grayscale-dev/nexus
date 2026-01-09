@@ -289,5 +289,6 @@ export default function FeedbackForm({ workspaceId, onSuccess, onCancel, allowAt
         </Button>
       </div>
     </form>
+    </>
   );
 }
