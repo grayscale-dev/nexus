@@ -34,6 +34,10 @@ import { applyRateLimit, addCacheHeaders, RATE_LIMITS } from './rateLimiter.js';
  */
 Deno.serve(async (req) => {
   try {
+    // Apply rate limiting (60 req/min per IP)
+    const rateLimitResponse = applyRateLimit(req, RATE_LIMITS.PUBLIC_API);
+    if (rateLimitResponse) return rateLimitResponse;
+    
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
     const { workspace_id, type, status, limit = 50, offset = 0 } = payload;
@@ -93,10 +97,13 @@ Deno.serve(async (req) => {
       submitter_email: anonymizeEmail(item.submitter_email)
     }));
 
-    return Response.json({
+    const response = Response.json({
       items: publicItems,
       total
     });
+    
+    // Cache for 2 minutes (feedback list changes frequently)
+    return addCacheHeaders(response, 120);
 
   } catch (error) {
     console.error('Public feedback fetch error:', error);
