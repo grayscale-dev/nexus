@@ -86,7 +86,7 @@ export default function Home() {
               alt="Nexus" 
               className="h-8 w-8 object-contain"
             />
-            <span className="text-lg font-bold text-slate-900">Nexus</span>
+            <span className="text-lg font-bold text-slate-900">nexus</span>
           </div>
           
           <nav className="hidden md:flex items-center gap-8">
