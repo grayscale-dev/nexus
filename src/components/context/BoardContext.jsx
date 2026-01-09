@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
@@ -143,9 +142,33 @@ export function BoardProvider({ children }) {
         messages
       });
 
+      // Track view (fire and forget, don't block UI)
+      trackBoardView(slug).catch(() => {
+        // Silently fail if tracking fails
+      });
+
     } catch (error) {
       console.error('Failed to load board context:', error);
       setState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const trackBoardView = async (slug) => {
+    try {
+      // Generate or retrieve session ID (persists across page loads)
+      let sessionId = sessionStorage.getItem('analytics_session_id');
+      if (!sessionId) {
+        sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+        sessionStorage.setItem('analytics_session_id', sessionId);
+      }
+
+      await base44.functions.invoke('publicTrackBoardView', {
+        slug,
+        session_id: sessionId,
+        referrer: document.referrer || undefined
+      });
+    } catch (error) {
+      // Silent fail - analytics should never break the app
     }
   };
 
