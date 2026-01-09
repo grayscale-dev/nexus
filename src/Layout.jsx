@@ -238,29 +238,31 @@ export default function Layout({ children, currentPageName }) {
               )}
 
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center gap-1 ml-6">
-                {visibleNavItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.page);
-                  
-                  return (
-                    <Link
-                      key={item.page}
-                      to={`/board/${workspace.slug}/${item.page.toLowerCase()}`}
-                      style={active ? { backgroundColor: `${workspace?.primary_color || '#0f172a'}15` } : {}}
-                      className={cn(
-                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                        active 
-                          ? 'text-slate-900' 
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </nav>
+              {workspace && (
+                <nav className="hidden md:flex items-center gap-1 ml-6">
+                  {visibleNavItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.page);
+
+                    return (
+                      <Link
+                        key={item.page}
+                        to={boardUrl(workspace.slug, item.page.toLowerCase())}
+                        style={active ? { backgroundColor: `${workspace.primary_color || '#0f172a'}15` } : {}}
+                        className={cn(
+                          'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                          active 
+                            ? 'text-slate-900' 
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </nav>
+              )}
             </div>
 
             {/* Right: User menu & Admin links */}
@@ -282,7 +284,7 @@ export default function Layout({ children, currentPageName }) {
                   </div>
                 )}
                 
-                {isAdmin && (
+                {isAdmin && workspace && (
                   <div className="hidden md:flex items-center gap-1">
                     <Link to={boardUrl(workspace.slug, 'api')}>
                       <Button variant="ghost" size="sm" className="text-slate-600">
@@ -334,14 +336,14 @@ export default function Layout({ children, currentPageName }) {
                 <SheetContent side="right" className="w-72">
                   <div className="flex flex-col h-full">
                     <div className="space-y-1 py-4">
-                      {visibleNavItems.map((item) => {
+                      {workspace && visibleNavItems.map((item) => {
                         const Icon = item.icon;
                         const active = isActive(item.page);
-                        
+
                         return (
                           <Link
                             key={item.page}
-                            to={`/board/${workspace.slug}/${item.page.toLowerCase()}`}
+                            to={boardUrl(workspace.slug, item.page.toLowerCase())}
                             onClick={() => setMobileMenuOpen(false)}
                             className={cn(
                               'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all',
@@ -357,7 +359,7 @@ export default function Layout({ children, currentPageName }) {
                       })}
                     </div>
                     
-                    {isAdmin && (
+                    {isAdmin && workspace && (
                       <>
                         <div className="border-t border-slate-200 pt-4 mt-2">
                           <p className="px-4 text-xs font-medium text-slate-400 uppercase mb-2">Admin</p>
