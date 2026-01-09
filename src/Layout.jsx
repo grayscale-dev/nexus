@@ -244,7 +244,7 @@ export default function Layout({ children, currentPageName }) {
                   return (
                     <Link
                       key={item.page}
-                      to={createPageUrl(item.page)}
+                      to={`/board/${workspace.slug}/${item.page.toLowerCase()}`}
                       style={active ? { backgroundColor: `${workspace?.primary_color || '#0f172a'}15` } : {}}
                       className={cn(
                         'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
@@ -339,7 +339,7 @@ export default function Layout({ children, currentPageName }) {
                         return (
                           <Link
                             key={item.page}
-                            to={createPageUrl(item.page)}
+                            to={`/board/${workspace.slug}/${item.page.toLowerCase()}`}
                             onClick={() => setMobileMenuOpen(false)}
                             className={cn(
                               'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all',

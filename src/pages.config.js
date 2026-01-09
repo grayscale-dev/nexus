@@ -11,6 +11,11 @@ import Roadmap from './pages/Roadmap';
 import Support from './pages/Support';
 import WorkspaceSettings from './pages/WorkspaceSettings';
 import Workspaces from './pages/Workspaces';
+import FeedbackLegacy from './pages/FeedbackLegacy';
+import RoadmapLegacy from './pages/RoadmapLegacy';
+import ChangelogLegacy from './pages/ChangelogLegacy';
+import DocsLegacy from './pages/DocsLegacy';
+import SupportLegacy from './pages/SupportLegacy';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +33,11 @@ export const PAGES = {
     "Support": Support,
     "WorkspaceSettings": WorkspaceSettings,
     "Workspaces": Workspaces,
+    "FeedbackLegacy": FeedbackLegacy,
+    "RoadmapLegacy": RoadmapLegacy,
+    "ChangelogLegacy": ChangelogLegacy,
+    "DocsLegacy": DocsLegacy,
+    "SupportLegacy": SupportLegacy,
 }
 
 export const pagesConfig = {
