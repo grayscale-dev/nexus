@@ -74,17 +74,8 @@ export default function Board() {
         sessionStorage.setItem('currentRole', role);
         sessionStorage.setItem('isPublicAccess', isPublicAccess.toString());
 
-        // Navigate to requested section
-        const sectionPageMap = {
-          'feedback': 'Feedback',
-          'roadmap': 'Roadmap',
-          'changelog': 'Changelog',
-          'docs': 'Docs',
-          'support': 'Support'
-        };
-
-        const targetPage = sectionPageMap[section] || 'Feedback';
-        navigate(createPageUrl(targetPage) + `?slug=${slug}`, { replace: true });
+        // Navigate to canonical board-scoped section
+        navigate(`/board/${slug}/${section}`, { replace: true });
 
       } else {
         // Private board - require authentication
