@@ -314,7 +314,7 @@ export default function FeedbackDetail({
           </div>
 
           {/* Reply form */}
-          {sessionStorage.getItem('isPublicAccess') === 'true' ? (
+          {!isStaff && sessionStorage.getItem('isPublicAccess') === 'true' ? (
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center">
               <p className="text-slate-600 mb-3">Login to post responses and engage with this feedback</p>
               <Button 

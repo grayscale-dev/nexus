@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
+import { BoardProvider } from '@/components/context/BoardContext';
 
 const navItems = [
   { name: 'Feedback', icon: MessageSquareText, page: 'Feedback' },
@@ -397,7 +398,9 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {children}
+        <BoardProvider>
+          {children}
+        </BoardProvider>
       </main>
     </div>
   );

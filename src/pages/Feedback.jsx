@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, SlidersHorizontal } from 'lucide-react';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
+import { useBoardContext } from '@/components/context/BoardContext';
 import FeedbackForm from '@/components/feedback/FeedbackForm';
 import FeedbackCard from '@/components/feedback/FeedbackCard';
 import FeedbackDetail from '@/components/feedback/FeedbackDetail';
@@ -27,9 +27,7 @@ import EmptyState from '@/components/common/EmptyState';
 
 export default function Feedback() {
   const navigate = useNavigate();
-  const [workspace, setWorkspace] = useState(null);
-  const [role, setRole] = useState('viewer');
-  const [user, setUser] = useState(null);
+  const { workspace, user, permissions, messages, isPublicAccess, loading: contextLoading } = useBoardContext();
   const [feedbackList, setFeedbackList] = useState([]);
   const [responses, setResponses] = useState({});
   const [loading, setLoading] = useState(true);
@@ -40,19 +38,10 @@ export default function Feedback() {
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    // Context is set by Board router via sessionStorage
-    const storedWorkspace = sessionStorage.getItem('selectedWorkspace');
-    const storedRole = sessionStorage.getItem('currentRole');
-    
-    if (!storedWorkspace) {
-      navigate(createPageUrl('Home'));
-      return;
+    if (!contextLoading && workspace) {
+      loadData();
     }
-    
-    setWorkspace(JSON.parse(storedWorkspace));
-    setRole(storedRole || 'viewer');
-    loadData();
-  }, []);
+  }, [contextLoading, workspace]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -65,18 +54,9 @@ export default function Feedback() {
     }
   }, [feedbackList]);
 
-  const loadData = async (workspaceIdOverride = null) => {
+  const loadData = async () => {
     try {
-      // Try to get authenticated user (may fail for public viewers)
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        // Not authenticated - public viewing mode
-        setUser(null);
-      }
-      
-      const workspaceId = workspaceIdOverride || sessionStorage.getItem('selectedWorkspaceId');
+      const workspaceId = workspace?.id;
       if (!workspaceId) {
         setLoading(false);
         return;
@@ -135,9 +115,7 @@ export default function Feedback() {
     }
   };
 
-  const isPublicAccess = sessionStorage.getItem('isPublicAccess') === 'true';
-  const canCreateFeedback = ['contributor', 'support', 'admin'].includes(role) && !isPublicAccess;
-  const isStaff = ['support', 'admin'].includes(role) && !isPublicAccess;
+
 
   // Filter feedback
   const filteredFeedback = feedbackList.filter(fb => {
@@ -167,7 +145,7 @@ export default function Feedback() {
         feedback={selectedFeedback.feedback}
         responses={selectedFeedback.responses}
         workspaceName={workspace?.name}
-        isStaff={isStaff}
+        isStaff={permissions.isStaff}
         onBack={() => setSelectedFeedback(null)}
         onUpdate={handleFeedbackUpdate}
       />
@@ -176,11 +154,18 @@ export default function Feedback() {
 
   return (
     <div className="space-y-6">
-      {/* Public viewing banner */}
-      {isPublicAccess && !user && (
+      {/* Access messages */}
+      {messages.loginPrompt && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
           <p className="text-blue-900">
-            👀 You're viewing this board in read-only mode. <button onClick={() => base44.auth.redirectToLogin(window.location.href)} className="underline font-medium">Login</button> to contribute feedback and interact.
+            👀 {messages.loginPrompt}. <button onClick={() => base44.auth.redirectToLogin(window.location.href)} className="underline font-medium">Login</button>
+          </p>
+        </div>
+      )}
+      {messages.accessDenied && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
+          <p className="text-amber-900">
+            ⚠️ {messages.accessDenied}
           </p>
         </div>
       )}
@@ -192,7 +177,7 @@ export default function Feedback() {
             {feedbackList.length} feedback items
           </p>
         </div>
-        {canCreateFeedback && (
+        {permissions.canCreateFeedback && (
           <Button 
             onClick={() => setShowNewForm(true)}
             style={{ backgroundColor: workspace?.primary_color || '#0f172a' }}
@@ -253,8 +238,8 @@ export default function Feedback() {
           description={feedbackList.length === 0 
             ? "Be the first to submit feedback!" 
             : "Try adjusting your filters"}
-          action={canCreateFeedback && feedbackList.length === 0 ? () => setShowNewForm(true) : undefined}
-          actionLabel={canCreateFeedback && feedbackList.length === 0 ? "Submit Feedback" : undefined}
+          action={permissions.canCreateFeedback && feedbackList.length === 0 ? () => setShowNewForm(true) : undefined}
+          actionLabel={permissions.canCreateFeedback && feedbackList.length === 0 ? "Submit Feedback" : undefined}
         />
       ) : (
         <div className="grid gap-4">
@@ -263,7 +248,7 @@ export default function Feedback() {
               key={feedback.id}
               feedback={feedback}
               onClick={() => handleFeedbackClick(feedback)}
-              showPriority={isStaff}
+              showPriority={permissions.isStaff}
               responseCount={responses[feedback.id] || 0}
             />
           ))}

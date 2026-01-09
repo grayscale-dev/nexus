@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
+import { useBoardContext } from '@/components/context/BoardContext';
 import RoadmapBoard from '@/components/roadmap/RoadmapBoard';
 import RoadmapItemModal from '@/components/roadmap/RoadmapItemModal';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -12,8 +13,7 @@ import EmptyState from '@/components/common/EmptyState';
 
 export default function Roadmap() {
   const navigate = useNavigate();
-  const [workspace, setWorkspace] = useState(null);
-  const [role, setRole] = useState('viewer');
+  const { workspace, permissions, messages, loading: contextLoading } = useBoardContext();
   const [items, setItems] = useState([]);
   const [updates, setUpdates] = useState({});
   const [linkedFeedback, setLinkedFeedback] = useState({});
@@ -23,19 +23,10 @@ export default function Roadmap() {
   const [newItemStatus, setNewItemStatus] = useState('planned');
 
   useEffect(() => {
-    // Context is set by Board router via sessionStorage
-    const storedWorkspace = sessionStorage.getItem('selectedWorkspace');
-    const storedRole = sessionStorage.getItem('currentRole');
-    
-    if (!storedWorkspace) {
-      navigate(createPageUrl('Home'));
-      return;
+    if (!contextLoading && workspace) {
+      loadData();
     }
-    
-    setWorkspace(JSON.parse(storedWorkspace));
-    setRole(storedRole || 'viewer');
-    loadData();
-  }, []);
+  }, [contextLoading, workspace]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,9 +39,9 @@ export default function Roadmap() {
     }
   }, [items]);
 
-  const loadData = async (workspaceIdOverride = null) => {
+  const loadData = async () => {
     try {
-      const workspaceId = workspaceIdOverride || sessionStorage.getItem('selectedWorkspaceId');
+      const workspaceId = workspace?.id;
       if (!workspaceId) {
         setLoading(false);
         return;
@@ -118,10 +109,7 @@ export default function Roadmap() {
     loadData();
   };
 
-  const isPublicAccess = sessionStorage.getItem('isPublicAccess') === 'true';
-  const isStaff = ['support', 'admin'].includes(role) && !isPublicAccess;
-
-  if (loading) {
+  if (loading || contextLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner size="lg" text="Loading roadmap..." />
@@ -131,10 +119,17 @@ export default function Roadmap() {
   
   return (
     <div className="space-y-6">
-      {isPublicAccess && (
+      {messages.loginPrompt && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
           <p className="text-blue-900">
-            👀 Viewing roadmap in read-only mode. <button onClick={() => base44.auth.redirectToLogin(window.location.href)} className="underline font-medium">Login</button> to contribute.
+            👀 {messages.loginPrompt}. <button onClick={() => base44.auth.redirectToLogin(window.location.href)} className="underline font-medium">Login</button>
+          </p>
+        </div>
+      )}
+      {messages.accessDenied && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
+          <p className="text-amber-900">
+            ⚠️ {messages.accessDenied}
           </p>
         </div>
       )}
@@ -146,7 +141,7 @@ export default function Roadmap() {
             Track upcoming features and improvements
           </p>
         </div>
-        {isStaff && (
+        {permissions.canCreateRoadmap && (
           <Button 
             onClick={() => handleCreateItem('planned')}
             style={{ backgroundColor: workspace?.primary_color || '#0f172a' }}
@@ -163,16 +158,16 @@ export default function Roadmap() {
         <EmptyState
           icon={Map}
           title="Roadmap is empty"
-          description={isStaff 
+          description={permissions.canCreateRoadmap 
             ? "Start building your roadmap by adding planned features" 
             : "Check back soon for upcoming features and improvements"}
-          action={isStaff ? () => handleCreateItem('planned') : undefined}
-          actionLabel={isStaff ? "Add First Item" : undefined}
+          action={permissions.canCreateRoadmap ? () => handleCreateItem('planned') : undefined}
+          actionLabel={permissions.canCreateRoadmap ? "Add First Item" : undefined}
         />
       ) : (
         <RoadmapBoard
           items={items}
-          isStaff={isStaff}
+          isStaff={permissions.isStaff}
           onItemClick={handleItemClick}
           onCreate={handleCreateItem}
           onUpdate={handleSave}
@@ -186,7 +181,7 @@ export default function Roadmap() {
         linkedFeedback={selectedItem ? linkedFeedback[selectedItem.id] || [] : []}
         isOpen={showNewModal}
         onClose={handleModalClose}
-        isStaff={isStaff}
+        isStaff={permissions.isStaff}
         workspaceId={workspace?.id}
         onSave={handleSave}
       />
