@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * Public API: Get single feedback item details
+ * Public API: Get single feedback item details with full comment thread
  * Endpoint: /api/public/feedback/:id
  * Method: POST
  * Auth: None required
@@ -32,11 +32,18 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  *     id: string,
  *     content: string,
  *     is_official: boolean,
+ *     author_role: string,
  *     attachments: Array<{ name: string, url: string }>,
  *     created_date: string,
  *     author_email: string (anonymized or team name)
  *   }>
  * }
+ * 
+ * Notes:
+ * - Returns ALL public comments (contributor + staff replies)
+ * - Filters out internal staff notes (is_internal_note = true)
+ * - Anonymizes user emails for privacy
+ * - Staff replies show workspace name as author
  */
 Deno.serve(async (req) => {
   try {
@@ -103,6 +110,7 @@ Deno.serve(async (req) => {
         id: r.id,
         content: r.content,
         is_official: r.is_official || false,
+        author_role: r.author_role || 'user',
         attachments: r.attachments || [],
         created_date: r.created_date,
         author_email: r.is_official 
