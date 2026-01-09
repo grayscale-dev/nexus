@@ -1,31 +1,12 @@
 /**
  * Rate Limiter for Public Endpoints
  * 
- * Provides per-IP rate limiting with burst handling and sliding window
- * to protect public endpoints from abuse.
+ * Uses Deno KV (distributed key-value store) for rate limiting across instances.
+ * Provides per-IP rate limiting with burst handling and sliding window.
  */
 
-// In-memory store for rate limiting (production would use Redis/KV)
-const ipStore = new Map();
-const sessionStore = new Map();
-
-// Cleanup old entries every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  const maxAge = 3600000; // 1 hour
-  
-  for (const [key, data] of ipStore.entries()) {
-    if (now - data.lastCleanup > maxAge) {
-      ipStore.delete(key);
-    }
-  }
-  
-  for (const [key, data] of sessionStore.entries()) {
-    if (now - data.lastCleanup > maxAge) {
-      sessionStore.delete(key);
-    }
-  }
-}, 600000);
+// Initialize Deno KV store (shared across all instances in Deno Deploy)
+const kv = await Deno.openKv();
 
 /**
  * Extract IP address from request
@@ -73,99 +54,136 @@ export const RATE_LIMITS = {
 };
 
 /**
- * Check rate limit for an IP address
+ * Check rate limit for an IP address using Deno KV
  * Uses sliding window algorithm with burst allowance
  */
-function checkIPLimit(ip, config) {
+async function checkIPLimit(ip, config) {
   const now = Date.now();
   const windowStart = now - config.windowMs;
+  const burstWindowStart = now - 10000; // 10 second burst window
   
-  if (!ipStore.has(ip)) {
-    ipStore.set(ip, {
-      requests: [],
-      lastCleanup: now,
-    });
-  }
+  const key = ['ratelimit', 'ip', ip];
   
-  const data = ipStore.get(ip);
+  // Atomic read-modify-write with Deno KV
+  let result;
+  let attempts = 0;
+  const maxAttempts = 3;
   
-  // Remove expired requests (sliding window)
-  data.requests = data.requests.filter(timestamp => timestamp > windowStart);
-  data.lastCleanup = now;
-  
-  // Check if limit exceeded
-  if (data.requests.length >= config.maxRequests) {
-    const oldestRequest = data.requests[0];
-    const retryAfter = Math.ceil((oldestRequest + config.windowMs - now) / 1000);
+  while (attempts < maxAttempts) {
+    const entry = await kv.get(key);
+    const requests = entry.value?.requests || [];
     
-    return {
-      allowed: false,
-      retryAfter,
-      remaining: 0,
-      limit: config.maxRequests,
-    };
+    // Remove expired requests (sliding window)
+    const validRequests = requests.filter(timestamp => timestamp > windowStart);
+    
+    // Check if limit exceeded
+    if (validRequests.length >= config.maxRequests) {
+      const oldestRequest = validRequests[0];
+      const retryAfter = Math.ceil((oldestRequest + config.windowMs - now) / 1000);
+      
+      return {
+        allowed: false,
+        retryAfter,
+        remaining: 0,
+        limit: config.maxRequests,
+      };
+    }
+    
+    // Check burst (recent requests in last 10 seconds)
+    const recentRequests = validRequests.filter(timestamp => timestamp > burstWindowStart);
+    
+    if (recentRequests.length >= config.burst) {
+      return {
+        allowed: false,
+        retryAfter: 10,
+        remaining: 0,
+        limit: config.maxRequests,
+        burstExceeded: true,
+      };
+    }
+    
+    // Try to add new request atomically
+    validRequests.push(now);
+    
+    const commitResult = await kv.atomic()
+      .check(entry)
+      .set(key, { requests: validRequests }, { expireIn: config.windowMs })
+      .commit();
+    
+    if (commitResult.ok) {
+      return {
+        allowed: true,
+        remaining: config.maxRequests - validRequests.length,
+        limit: config.maxRequests,
+        retryAfter: null,
+      };
+    }
+    
+    // Conflict - retry
+    attempts++;
   }
   
-  // Check burst (recent requests in last 10 seconds)
-  const burstWindowStart = now - 10000;
-  const recentRequests = data.requests.filter(timestamp => timestamp > burstWindowStart);
-  
-  if (recentRequests.length >= config.burst) {
-    return {
-      allowed: false,
-      retryAfter: 10,
-      remaining: 0,
-      limit: config.maxRequests,
-      burstExceeded: true,
-    };
-  }
-  
-  // Allow request
-  data.requests.push(now);
-  
+  // If we fail after retries, fail open (allow request but log)
+  console.warn(`Rate limit check failed after ${maxAttempts} attempts for IP: ${ip}`);
   return {
     allowed: true,
-    remaining: config.maxRequests - data.requests.length,
+    remaining: 0,
     limit: config.maxRequests,
     retryAfter: null,
   };
 }
 
 /**
- * Check rate limit for a session (analytics-specific)
+ * Check rate limit for a session (analytics-specific) using Deno KV
  */
-function checkSessionLimit(sessionId, identifier, config) {
-  const key = `${sessionId}:${identifier}`;
+async function checkSessionLimit(sessionId, identifier, config) {
   const now = Date.now();
   const windowStart = now - config.windowMs;
+  const key = ['ratelimit', 'session', sessionId, identifier];
   
-  if (!sessionStore.has(key)) {
-    sessionStore.set(key, {
-      requests: [],
-      lastCleanup: now,
-    });
-  }
+  // Atomic read-modify-write with Deno KV
+  let attempts = 0;
+  const maxAttempts = 3;
   
-  const data = sessionStore.get(key);
-  
-  // Remove expired requests
-  data.requests = data.requests.filter(timestamp => timestamp > windowStart);
-  data.lastCleanup = now;
-  
-  // Check if limit exceeded
-  if (data.requests.length >= config.maxRequests) {
-    const oldestRequest = data.requests[0];
-    const retryAfter = Math.ceil((oldestRequest + config.windowMs - now) / 1000);
+  while (attempts < maxAttempts) {
+    const entry = await kv.get(key);
+    const requests = entry.value?.requests || [];
     
-    return {
-      allowed: false,
-      retryAfter,
-    };
+    // Remove expired requests
+    const validRequests = requests.filter(timestamp => timestamp > windowStart);
+    
+    // Check if limit exceeded
+    if (validRequests.length >= config.maxRequests) {
+      const oldestRequest = validRequests[0];
+      const retryAfter = Math.ceil((oldestRequest + config.windowMs - now) / 1000);
+      
+      return {
+        allowed: false,
+        retryAfter,
+      };
+    }
+    
+    // Try to add new request atomically
+    validRequests.push(now);
+    
+    const commitResult = await kv.atomic()
+      .check(entry)
+      .set(key, { requests: validRequests }, { expireIn: config.windowMs })
+      .commit();
+    
+    if (commitResult.ok) {
+      return {
+        allowed: true,
+        retryAfter: null,
+      };
+    }
+    
+    // Conflict - retry
+    attempts++;
   }
   
-  // Allow request
-  data.requests.push(now);
-  
+  // Fail open after retries
+  console.warn(`Session rate limit check failed after ${maxAttempts} attempts`);
   return {
     allowed: true,
     retryAfter: null,
@@ -176,11 +194,11 @@ function checkSessionLimit(sessionId, identifier, config) {
  * Apply rate limiting to a request
  * Returns Response object if rate limit exceeded, null if allowed
  */
-export function applyRateLimit(req, config, options = {}) {
+export async function applyRateLimit(req, config, options = {}) {
   const ip = getClientIP(req);
   
   // Check IP-based limit
-  const ipLimit = checkIPLimit(ip, config);
+  const ipLimit = await checkIPLimit(ip, config);
   
   if (!ipLimit.allowed) {
     return Response.json({
@@ -202,7 +220,7 @@ export function applyRateLimit(req, config, options = {}) {
   
   // Additional session-based limit for analytics
   if (options.sessionId && options.identifier) {
-    const sessionLimit = checkSessionLimit(options.sessionId, options.identifier, config);
+    const sessionLimit = await checkSessionLimit(options.sessionId, options.identifier, config);
     
     if (!sessionLimit.allowed) {
       return Response.json({

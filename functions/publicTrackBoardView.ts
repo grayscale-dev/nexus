@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     
     // Apply strict rate limiting for analytics
     // Both per-session (1 view per board per 5 min) AND per-IP (60 req/min)
-    const rateLimitResponse = applyRateLimit(req, RATE_LIMITS.ANALYTICS, {
+    const rateLimitResponse = await applyRateLimit(req, RATE_LIMITS.ANALYTICS, {
       sessionId: session_id,
       identifier: slug,
     });

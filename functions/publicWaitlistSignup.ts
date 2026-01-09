@@ -4,7 +4,7 @@ import { applyRateLimit, addNoCacheHeaders, RATE_LIMITS } from './rateLimiter.js
 Deno.serve(async (req) => {
     try {
         // Apply rate limiting for signups (3 signups per minute per IP)
-        const rateLimitResponse = applyRateLimit(req, RATE_LIMITS.SIGNUP);
+        const rateLimitResponse = await applyRateLimit(req, RATE_LIMITS.SIGNUP);
         if (rateLimitResponse) return rateLimitResponse;
         
         const base44 = createClientFromRequest(req);
