@@ -109,7 +109,7 @@ export default function FeedbackForm({ workspaceId, onSuccess, onCancel, allowAt
     <>
       <ProfileGuard />
       <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
+        <div className="space-y-4">
         <div>
           <Label htmlFor="title" className="text-sm font-medium text-slate-700">
             Title <span className="text-red-500">*</span>
@@ -295,8 +295,8 @@ export default function FeedbackForm({ workspaceId, onSuccess, onCancel, allowAt
             </>
           )}
         </Button>
-      </div>
-    </form>
+        </div>
+      </form>
     </>
   );
 }
