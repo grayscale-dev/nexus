@@ -3,6 +3,10 @@ import { applyRateLimit, addNoCacheHeaders, RATE_LIMITS } from './rateLimiter.js
 
 Deno.serve(async (req) => {
     try {
+        // Apply rate limiting for signups (3 signups per minute per IP)
+        const rateLimitResponse = applyRateLimit(req, RATE_LIMITS.SIGNUP);
+        if (rateLimitResponse) return rateLimitResponse;
+        
         const base44 = createClientFromRequest(req);
         
         // Parse request body
@@ -27,10 +31,13 @@ Deno.serve(async (req) => {
             status: 'pending'
         });
 
-        return Response.json({ 
+        const response = Response.json({ 
             success: true, 
             id: signup.id 
         });
+        
+        // Never cache signup responses
+        return addNoCacheHeaders(response);
     } catch (error) {
         console.error('Waitlist signup error:', error);
         return Response.json(
