@@ -20,15 +20,19 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  *   steps_to_reproduce?: string,
  *   expected_behavior?: string,
  *   actual_behavior?: string,
+ *   environment?: object,
+ *   attachments: Array<{ name: string, url: string, type: string }>,
  *   status: string,
  *   tags: string[],
  *   vote_count: number,
  *   created_date: string,
  *   submitter_email: string (anonymized),
+ *   response_count: number,
  *   responses: Array<{
  *     id: string,
  *     content: string,
  *     is_official: boolean,
+ *     attachments: Array<{ name: string, url: string }>,
  *     created_date: string,
  *     author_email: string (anonymized or team name)
  *   }>
@@ -68,11 +72,14 @@ Deno.serve(async (req) => {
 
     const feedback = feedbackItems[0];
 
-    // Fetch responses
-    const responses = await base44.asServiceRole.entities.FeedbackResponse.filter({
+    // Fetch responses (exclude internal notes)
+    const allResponses = await base44.asServiceRole.entities.FeedbackResponse.filter({
       feedback_id,
       workspace_id
     }, 'created_date');
+
+    // Filter out internal staff notes
+    const publicResponses = allResponses.filter(r => !r.is_internal_note);
 
     // Return whitelisted fields
     return Response.json({
@@ -84,15 +91,19 @@ Deno.serve(async (req) => {
       steps_to_reproduce: feedback.steps_to_reproduce || '',
       expected_behavior: feedback.expected_behavior || '',
       actual_behavior: feedback.actual_behavior || '',
+      environment: feedback.environment || null,
+      attachments: feedback.attachments || [],
       status: feedback.status,
       tags: feedback.tags || [],
       vote_count: feedback.vote_count || 0,
       created_date: feedback.created_date,
       submitter_email: anonymizeEmail(feedback.submitter_email),
-      responses: responses.map(r => ({
+      response_count: publicResponses.length,
+      responses: publicResponses.map(r => ({
         id: r.id,
         content: r.content,
         is_official: r.is_official || false,
+        attachments: r.attachments || [],
         created_date: r.created_date,
         author_email: r.is_official 
           ? `${workspaces[0].name} Team` 

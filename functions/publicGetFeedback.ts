@@ -24,6 +24,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  *     status: string,
  *     tags: string[],
  *     vote_count: number,
+ *     response_count: number,
  *     created_date: string,
  *     submitter_email: string (anonymized)
  *   }>,
@@ -65,6 +66,17 @@ Deno.serve(async (req) => {
     const total = allFeedback.length;
     const items = allFeedback.slice(offset, offset + limit);
 
+    // Fetch response counts (excluding internal notes)
+    const allResponses = await base44.asServiceRole.entities.FeedbackResponse.filter({
+      workspace_id
+    });
+    const responseCounts = {};
+    allResponses.forEach(r => {
+      if (!r.is_internal_note) {
+        responseCounts[r.feedback_id] = (responseCounts[r.feedback_id] || 0) + 1;
+      }
+    });
+
     // Return whitelisted fields only
     const publicItems = items.map(item => ({
       id: item.id,
@@ -75,6 +87,7 @@ Deno.serve(async (req) => {
       status: item.status,
       tags: item.tags || [],
       vote_count: item.vote_count || 0,
+      response_count: responseCounts[item.id] || 0,
       created_date: item.created_date,
       submitter_email: anonymizeEmail(item.submitter_email)
     }));
