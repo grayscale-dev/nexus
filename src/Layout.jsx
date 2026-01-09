@@ -15,6 +15,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
+import { boardUrl } from '@/components/utils/boardUrl';
 import { cn } from '@/lib/utils';
 import { BoardProvider } from '@/components/context/BoardContext';
 
@@ -283,13 +284,13 @@ export default function Layout({ children, currentPageName }) {
                 
                 {isAdmin && (
                   <div className="hidden md:flex items-center gap-1">
-                    <Link to={createPageUrl('ApiDocs')}>
+                    <Link to={boardUrl(workspace.slug, 'api')}>
                       <Button variant="ghost" size="sm" className="text-slate-600">
                         <Key className="h-4 w-4 mr-2" />
                         API
                       </Button>
                     </Link>
-                    <Link to={createPageUrl('WorkspaceSettings')}>
+                    <Link to={boardUrl(workspace.slug, 'settings')}>
                       <Button variant="ghost" size="sm" className="text-slate-600">
                         <Settings className="h-4 w-4 mr-2" />
                         Settings
@@ -361,7 +362,7 @@ export default function Layout({ children, currentPageName }) {
                         <div className="border-t border-slate-200 pt-4 mt-2">
                           <p className="px-4 text-xs font-medium text-slate-400 uppercase mb-2">Admin</p>
                           <Link
-                            to={createPageUrl('ApiDocs')}
+                            to={boardUrl(workspace.slug, 'api')}
                             onClick={() => setMobileMenuOpen(false)}
                             className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50"
                           >
@@ -369,7 +370,7 @@ export default function Layout({ children, currentPageName }) {
                             API Documentation
                           </Link>
                           <Link
-                            to={createPageUrl('WorkspaceSettings')}
+                            to={boardUrl(workspace.slug, 'settings')}
                             onClick={() => setMobileMenuOpen(false)}
                             className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50"
                           >

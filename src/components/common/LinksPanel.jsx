@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
+import { boardUrl, buildQuery } from '@/components/utils/boardUrl';
 
 const linkTypeConfig = {
   feedback: { icon: MessageSquare, label: 'Feedback', color: 'text-blue-600', page: 'Feedback', param: 'id' },
@@ -18,7 +19,8 @@ const linkTypeConfig = {
 };
 
 export default function LinksPanel({ 
-  workspaceId, 
+  workspaceId,
+  workspaceSlug,
   itemType, // 'feedback', 'roadmap', 'changelog', 'docs'
   itemId,
   links, // { feedback_ids: [], roadmap_item_ids: [], changelog_entry_ids: [], doc_page_ids: [] }
@@ -223,7 +225,7 @@ export default function LinksPanel({
             {items.map(item => (
               <div key={item.id} className="flex items-center justify-between gap-2 p-2 bg-white rounded-lg border border-slate-200">
                 <a
-                  href={`${createPageUrl(config.page)}?${config.param}=${type === 'docs' ? item.slug : item.id}`}
+                  href={boardUrl(workspaceSlug, config.page.toLowerCase(), { query: buildQuery({ [config.param]: type === 'docs' ? item.slug : item.id }) })}
                   className="flex items-center gap-2 flex-1 hover:text-slate-900 transition-colors"
                 >
                   <Icon className={`h-3 w-3 ${config.color}`} />
