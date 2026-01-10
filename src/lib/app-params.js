@@ -12,16 +12,24 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 	}
 	const storageKey = `base44_${toSnakeCase(paramName)}`;
 	const urlParams = new URLSearchParams(window.location.search);
+	const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
 	const searchParam = urlParams.get(paramName);
+	const hashParam = hashParams.get(paramName);
 	if (removeFromUrl) {
 		urlParams.delete(paramName);
+		hashParams.delete(paramName);
+		const newHash = hashParams.toString();
 		const newUrl = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ""
-			}${window.location.hash}`;
+			}${newHash ? `#${newHash}` : ""}`;
 		window.history.replaceState({}, document.title, newUrl);
 	}
 	if (searchParam) {
 		storage.setItem(storageKey, searchParam);
 		return searchParam;
+	}
+	if (hashParam) {
+		storage.setItem(storageKey, hashParam);
+		return hashParam;
 	}
 	if (defaultValue) {
 		storage.setItem(storageKey, defaultValue);
@@ -39,9 +47,14 @@ const getAppParams = () => {
 		storage.removeItem('base44_access_token');
 		storage.removeItem('token');
 	}
+	const accessToken = getAppParamValue("access_token", { removeFromUrl: true });
+	const legacyToken = accessToken ? null : storage.getItem('token');
+	if (!accessToken && legacyToken) {
+		storage.setItem('base44_access_token', legacyToken);
+	}
 	return {
 		appId: getAppParamValue("app_id", { defaultValue: import.meta.env.VITE_BASE44_APP_ID }),
-		token: getAppParamValue("access_token", { removeFromUrl: true }),
+		token: accessToken || legacyToken,
 		fromUrl: getAppParamValue("from_url", { defaultValue: window.location.href }),
 		functionsVersion: getAppParamValue("functions_version", { defaultValue: import.meta.env.VITE_BASE44_FUNCTIONS_VERSION }),
 		appBaseUrl: getAppParamValue("app_base_url", { defaultValue: import.meta.env.VITE_BASE44_APP_BASE_URL }),

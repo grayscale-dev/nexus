@@ -82,7 +82,7 @@ export default function Workspaces() {
       setWorkspaceRoles(roles);
 
       if (roles.length > 0) {
-        const workspaceIds = [...new Set(roles.map(r => r.workspace_id))];
+        const workspaceIds = [...new Set(roles.map(r => r.workspace_id).filter(Boolean))];
         const workspacesData = await Promise.all(
           workspaceIds.map(async (id) => {
             const results = await base44.entities.Workspace.filter({ id });

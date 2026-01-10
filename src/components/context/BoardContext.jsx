@@ -78,14 +78,25 @@ export function BoardProvider({ children }) {
         isPublicAccess = sessionStorage.getItem('isPublicAccess') === 'true';
       } else {
         // Cache miss or different slug - resolve from API
-        const response = await base44.functions.invoke('publicGetWorkspace', { slug });
-        
-        if (!response.data) {
+        let workspaceResponse = null;
+        try {
+          workspaceResponse = await base44.functions.invoke('publicGetWorkspace', { slug });
+        } catch (publicError) {
+          const status = publicError?.status || publicError?.response?.status;
+          if (status === 403) {
+            const results = await base44.entities.Workspace.filter({ slug });
+            workspaceResponse = { data: results[0] || null };
+          } else {
+            throw publicError;
+          }
+        }
+
+        if (!workspaceResponse?.data) {
           setState(prev => ({ ...prev, loading: false }));
           return;
         }
 
-        workspace = response.data;
+        workspace = workspaceResponse.data;
 
         // Determine access level
         let user = null;

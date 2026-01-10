@@ -28,7 +28,7 @@ export function UserProvider({ children }) {
       });
       
       if (membershipData.length > 0) {
-        const tenantIds = [...new Set(membershipData.map(m => m.tenant_id))];
+        const tenantIds = [...new Set(membershipData.map(m => m.tenant_id).filter(Boolean))];
         const tenantsData = await Promise.all(
           tenantIds.map(id => base44.entities.Tenant.filter({ id }))
         );
@@ -43,7 +43,7 @@ export function UserProvider({ children }) {
 
       // Load accessible workspaces
       if (rolesData.length > 0) {
-        const workspaceIds = [...new Set(rolesData.map(r => r.workspace_id))];
+        const workspaceIds = [...new Set(rolesData.map(r => r.workspace_id).filter(Boolean))];
         const workspacesData = await Promise.all(
           workspaceIds.map(id => base44.entities.Workspace.filter({ id }))
         );

@@ -181,8 +181,9 @@ export default function Layout({ children, currentPageName }) {
             {/* Left: Logo & Workspace Switcher */}
             <div className="flex items-center gap-4">
               {workspace ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                isPublicViewing ? (
+                  // Simple link for incognito/public users
+                  <Link to={boardUrl(workspace.slug, 'feedback')}>
                     <Button variant="ghost" className="h-auto p-2 hover:bg-slate-100">
                       <div className="flex items-center gap-3">
                         {workspace.logo_url ? (
@@ -195,39 +196,59 @@ export default function Layout({ children, currentPageName }) {
                         <span className="font-semibold text-slate-900 hidden sm:inline">
                           {workspace.name}
                         </span>
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
                       </div>
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-64">
-                    {workspaces.map((ws) => (
-                      <DropdownMenuItem 
-                        key={ws.id} 
-                        onClick={() => handleWorkspaceSwitch(ws)}
-                        className="cursor-pointer flex items-center"
-                      >
-                        {ws.logo_url ? (
-                          <img src={ws.logo_url} alt={ws.name} className="h-4 w-4 mr-2 object-contain" />
-                        ) : (
-                          <div className="h-4 w-4 mr-2 rounded" style={{ backgroundColor: ws.primary_color || '#0f172a' }}>
-                            <Folder className="h-3 w-3 text-white" style={{ transform: 'scale(0.75)' }} />
-                          </div>
-                        )}
-                        <span>{ws.name}</span>
-                        {ws.id === workspace.id && (
-                          <span className="ml-auto text-xs text-slate-400">Current</span>
-                        )}
+                  </Link>
+                ) : (
+                  // Dropdown menu for authenticated users with workspace access
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-auto p-2 hover:bg-slate-100">
+                        <div className="flex items-center gap-3">
+                          {workspace.logo_url ? (
+                            <img src={workspace.logo_url} alt={workspace.name} className="h-8 w-8 object-contain rounded-lg" />
+                          ) : (
+                            <div className="p-1.5 rounded-lg" style={{ backgroundColor: workspace.primary_color || '#0f172a' }}>
+                              <Folder className="h-4 w-4 text-white" />
+                            </div>
+                          )}
+                          <span className="font-semibold text-slate-900 hidden sm:inline">
+                            {workspace.name}
+                          </span>
+                          <ChevronDown className="h-4 w-4 text-slate-400" />
+                        </div>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-64">
+                      {workspaces.map((ws) => (
+                        <DropdownMenuItem
+                          key={ws.id}
+                          onClick={() => handleWorkspaceSwitch(ws)}
+                          className="cursor-pointer flex items-center"
+                        >
+                          {ws.logo_url ? (
+                            <img src={ws.logo_url} alt={ws.name} className="h-4 w-4 mr-2 object-contain" />
+                          ) : (
+                            <div className="h-4 w-4 mr-2 rounded" style={{ backgroundColor: ws.primary_color || '#0f172a' }}>
+                              <Folder className="h-3 w-3 text-white" style={{ transform: 'scale(0.75)' }} />
+                            </div>
+                          )}
+                          <span>{ws.name}</span>
+                          {ws.id === workspace.id && (
+                            <span className="ml-auto text-xs text-slate-400">Current</span>
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to={createPageUrl('Workspaces')} className="cursor-pointer">
+                          <ArrowLeft className="h-4 w-4 mr-2" />
+                          View all boards
+                        </Link>
                       </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to={createPageUrl('Workspaces')} className="cursor-pointer">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        View all boards
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )
               ) : (
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-lg" style={{ backgroundColor: workspace?.primary_color || '#0f172a' }}>

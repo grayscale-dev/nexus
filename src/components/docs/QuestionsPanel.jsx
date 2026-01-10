@@ -23,7 +23,7 @@ export default function QuestionsPanel({ workspaceId, onClose }) {
       setQuestions(allComments);
 
       // Load doc titles
-      const docIds = [...new Set(allComments.map(c => c.doc_page_id))];
+      const docIds = [...new Set(allComments.map(c => c.doc_page_id).filter(Boolean))];
       const docData = {};
       for (const id of docIds) {
         const results = await base44.entities.DocPage.filter({ id });

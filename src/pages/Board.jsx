@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
@@ -22,6 +22,7 @@ import ApiDocs from './ApiDocs';
  */
 export default function Board() {
   const navigate = useNavigate();
+  const { slug: routeSlug, section: routeSection } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [slug, setSlug] = useState(null);
@@ -39,22 +40,22 @@ export default function Board() {
   };
 
   useEffect(() => {
-    initializeBoard();
-  }, []);
+    initializeBoard(routeSlug, routeSection);
+  }, [routeSlug, routeSection]);
 
-  const initializeBoard = async () => {
+  const initializeBoard = async (routeSlugParam, routeSectionParam) => {
     try {
-      // Parse URL path: /board/:slug/:section
-      const pathParts = window.location.pathname.split('/').filter(Boolean);
-      
-      if (pathParts[0] !== 'board' || pathParts.length < 3) {
+      setLoading(true);
+      setError(null);
+
+      if (!routeSlugParam || !routeSectionParam) {
         setError('Invalid board URL');
         setLoading(false);
         return;
       }
 
-      const boardSlug = pathParts[1];
-      const boardSection = pathParts[2];
+      const boardSlug = routeSlugParam;
+      const boardSection = routeSectionParam;
 
       // Validate section exists
       if (!sectionComponents[boardSection]) {
@@ -68,9 +69,21 @@ export default function Board() {
 
       // Load workspace context via public endpoint
       try {
-        const { data: workspace } = await base44.functions.invoke('publicGetWorkspace', {
-          slug: boardSlug
-        });
+        let workspace = null;
+        try {
+          const { data } = await base44.functions.invoke('publicGetWorkspace', {
+            slug: boardSlug
+          });
+          workspace = data;
+        } catch (publicError) {
+          const status = publicError?.status || publicError?.response?.status;
+          if (status === 403) {
+            const results = await base44.entities.Workspace.filter({ slug: boardSlug });
+            workspace = results[0] || null;
+          } else {
+            throw publicError;
+          }
+        }
 
         if (!workspace) {
           setError('Board not found');

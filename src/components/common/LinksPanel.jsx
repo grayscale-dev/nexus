@@ -42,37 +42,42 @@ export default function LinksPanel({
   const loadLinkedData = async () => {
     const data = {};
     
-    if (links?.feedback_ids?.length) {
+    const feedbackIds = links?.feedback_ids?.filter(Boolean) || [];
+    if (feedbackIds.length) {
       const items = await Promise.all(
-        links.feedback_ids.map(id => base44.entities.Feedback.filter({ id }).then(r => r[0]))
+        feedbackIds.map(id => base44.entities.Feedback.filter({ id }).then(r => r[0]))
       );
       data.feedback = items.filter(Boolean);
     }
     
-    if (links?.roadmap_item_ids?.length) {
+    const roadmapIds = links?.roadmap_item_ids?.filter(Boolean) || [];
+    if (roadmapIds.length) {
       const items = await Promise.all(
-        links.roadmap_item_ids.map(id => base44.entities.RoadmapItem.filter({ id }).then(r => r[0]))
+        roadmapIds.map(id => base44.entities.RoadmapItem.filter({ id }).then(r => r[0]))
       );
       data.roadmap = items.filter(Boolean);
     }
     
-    if (links?.changelog_entry_ids?.length) {
+    const changelogIds = links?.changelog_entry_ids?.filter(Boolean) || [];
+    if (changelogIds.length) {
       const items = await Promise.all(
-        links.changelog_entry_ids.map(id => base44.entities.ChangelogEntry.filter({ id }).then(r => r[0]))
+        changelogIds.map(id => base44.entities.ChangelogEntry.filter({ id }).then(r => r[0]))
       );
       data.changelog = items.filter(Boolean);
     }
     
-    if (links?.doc_page_ids?.length) {
+    const docPageIds = links?.doc_page_ids?.filter(Boolean) || [];
+    if (docPageIds.length) {
       const items = await Promise.all(
-        links.doc_page_ids.map(id => base44.entities.DocPage.filter({ id }).then(r => r[0]))
+        docPageIds.map(id => base44.entities.DocPage.filter({ id }).then(r => r[0]))
       );
       data.docs = items.filter(Boolean);
     }
     
-    if (links?.support_thread_ids?.length) {
+    const supportThreadIds = links?.support_thread_ids?.filter(Boolean) || [];
+    if (supportThreadIds.length) {
       const items = await Promise.all(
-        links.support_thread_ids.map(id => base44.entities.SupportThread.filter({ id }).then(r => r[0]))
+        supportThreadIds.map(id => base44.entities.SupportThread.filter({ id }).then(r => r[0]))
       );
       data.support = items.filter(Boolean);
     }
@@ -124,7 +129,7 @@ export default function LinksPanel({
 
     const field = fieldMap[linkType];
     const currentIds = links?.[field] || [];
-    const newIds = [...new Set([...currentIds, ...selectedItems])];
+    const newIds = [...new Set([...currentIds, ...selectedItems])].filter(Boolean);
 
     await updateLinks({ [field]: newIds });
     setShowAddModal(false);
