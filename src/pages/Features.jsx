@@ -6,6 +6,7 @@ import { createPageUrl } from '@/utils';
 import BetaAccessModal from '@/components/common/BetaAccessModal';
 import PublicHeader from '@/components/common/PublicHeader';
 import PublicFooter from '@/components/common/PublicFooter';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const features = [
   {
@@ -19,7 +20,7 @@ const features = [
       'Attach screenshots and files',
     ],
     image:
-      'https://images.unsplash.com/photo-1553028826-ccdfc0067cf9?auto=format&fit=crop&w=1200&q=80',
+      'feedback-page.png',
   },
   {
     id: 'product-roadmap',
@@ -32,7 +33,7 @@ const features = [
       'Link feedback to roadmap items',
     ],
     image:
-      'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=1200&q=80',
+      'roadmap.png',
   },
   {
     id: 'changelog',
@@ -45,7 +46,7 @@ const features = [
       'Link updates back to roadmap items',
     ],
     image:
-      'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=1200&q=80',
+      'changelog.png',
   },
   {
     id: 'documentation',
@@ -58,7 +59,7 @@ const features = [
       'Markdown + rich content',
     ],
     image:
-      'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1200&q=80',
+      'docs-page.png',
   },
   {
     id: 'support-threads',
@@ -71,7 +72,7 @@ const features = [
       'Attach files to replies',
     ],
     image:
-      'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80',
+      'support-inbox.png',
   },
   {
     id: 'workflow-automation',
@@ -84,12 +85,13 @@ const features = [
       'Analytics-ready event tracking',
     ],
     image:
-      'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=80',
+      'workflow-auto.png',
   },
 ];
 
 export default function Features() {
   const [showBetaModal, setShowBetaModal] = useState(false);
+  const [activeImage, setActiveImage] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -186,13 +188,17 @@ export default function Features() {
                   </p>
                   <div className="mt-6" />
                 </div>
-                <div className="rounded-3xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setActiveImage(feature)}
+                  className="rounded-3xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/40"
+                >
                   <img
                     src={feature.image}
                     alt={`${feature.title} placeholder`}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
                   />
-                </div>
+                </button>
               </div>
             ))}
           </div>
@@ -221,6 +227,20 @@ export default function Features() {
       </main>
 
       <PublicFooter />
+
+      <Dialog open={!!activeImage} onOpenChange={(open) => !open && setActiveImage(null)}>
+        <DialogContent className="max-w-5xl border-none bg-transparent p-0 shadow-none">
+          {activeImage ? (
+            <div className="rounded-3xl overflow-hidden border border-slate-200 bg-white shadow-xl">
+              <img
+                src={activeImage.image}
+                alt={`${activeImage.title} preview`}
+                className="h-auto w-full object-cover"
+              />
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <BetaAccessModal open={showBetaModal} onOpenChange={setShowBetaModal} />
     </div>
