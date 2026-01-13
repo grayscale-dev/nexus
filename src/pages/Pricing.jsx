@@ -9,6 +9,12 @@ import PublicFooter from '@/components/common/PublicFooter';
 
 export default function Pricing() {
   const [showBetaModal, setShowBetaModal] = useState(false);
+  const [enabledServices, setEnabledServices] = useState([
+    'Feedback',
+    'Roadmap',
+    'Changelog',
+  ]);
+  const [dailyInteractions, setDailyInteractions] = useState(120);
 
   useEffect(() => {
     document.title = 'base25 - Pricing';
@@ -16,6 +22,23 @@ export default function Pricing() {
   }, []);
 
   const services = ['Feedback', 'Roadmap', 'Changelog', 'Docs', 'Support'];
+  const includedDaily = 50;
+  const overageRate = 0.003;
+  const daysPerMonth = 30;
+
+  const selectedCount = enabledServices.length;
+  const serviceCost = selectedCount * 5;
+  const dailyOverage = Math.max(0, Number(dailyInteractions) - includedDaily);
+  const usageCost = dailyOverage * overageRate * daysPerMonth;
+  const totalCost = serviceCost + usageCost;
+
+  const toggleService = (service) => {
+    setEnabledServices((current) =>
+      current.includes(service)
+        ? current.filter((item) => item !== service)
+        : [...current, service]
+    );
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden">
@@ -95,7 +118,7 @@ export default function Pricing() {
                 </div>
                 <div className="rounded-2xl border border-slate-200 px-5 py-4">
                   <p className="text-sm text-slate-500">Overage</p>
-                  <p className="text-3xl font-semibold text-slate-900">$0.002</p>
+                  <p className="text-3xl font-semibold text-slate-900">$0.003</p>
                   <p className="text-sm text-slate-500">Per interaction</p>
                 </div>
               </div>
@@ -124,6 +147,91 @@ export default function Pricing() {
                     Support tickets and replies
                   </li>
                 </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-6 pb-16">
+          <div className="max-w-6xl mx-auto rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="flex items-center gap-3 text-slate-900">
+              <Sparkles className="h-6 w-6 text-amber-600" />
+              <h2 className="text-2xl font-semibold">Estimate your monthly cost</h2>
+            </div>
+            <p className="text-slate-600 mt-2">
+              Toggle the services you plan to use and estimate daily write interactions.
+            </p>
+
+            <div className="mt-6 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="space-y-6">
+                <div>
+                  <p className="text-sm font-medium text-slate-700">Enabled services</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {services.map((service) => (
+                      <button
+                        key={service}
+                        type="button"
+                        onClick={() => toggleService(service)}
+                        className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                          enabledServices.includes(service)
+                            ? 'border-slate-900 bg-slate-900 text-white'
+                            : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                      >
+                        <span className="font-medium">{service}</span>
+                        <span className="text-xs uppercase tracking-wide">
+                          {enabledServices.includes(service) ? 'On' : 'Off'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700" htmlFor="daily-interactions">
+                    Estimated interactions per day
+                  </label>
+                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <input
+                      id="daily-interactions"
+                      type="number"
+                      min="0"
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-slate-400 focus:outline-none"
+                      value={dailyInteractions}
+                      onChange={(event) => setDailyInteractions(event.target.value)}
+                    />
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                      {includedDaily} included / day
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.18em]">
+                  Estimated total
+                </p>
+                <div className="mt-4">
+                  <p className="text-4xl font-semibold text-slate-900">
+                    ${totalCost.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-slate-500">Per month (30-day estimate)</p>
+                </div>
+                <div className="mt-6 space-y-3 text-sm text-slate-600">
+                  <div className="flex items-center justify-between">
+                    <span>Services ({selectedCount})</span>
+                    <span>${serviceCost.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Overage ({dailyOverage} / day)</span>
+                    <span>${usageCost.toFixed(2)}</span>
+                  </div>
+                  <div className="h-px bg-slate-200" />
+                  <div className="flex items-center justify-between font-semibold text-slate-900">
+                    <span>Estimated total</span>
+                    <span>${totalCost.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
