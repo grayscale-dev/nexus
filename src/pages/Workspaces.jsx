@@ -121,22 +121,31 @@ export default function Workspaces() {
       } else if (joinLink.startsWith('http')) {
         const url = new URL(joinLink);
         slug = url.searchParams.get('board');
+        if (!slug) {
+          const parts = url.pathname.split('/').filter(Boolean);
+          if (parts[0] === 'board') {
+            slug = parts[1];
+          }
+        }
       } else {
-        // Assume it's just a slug
-        slug = joinLink.trim();
+        const parts = joinLink.trim().split('/').filter(Boolean);
+        if (parts[0] === 'board') {
+          slug = parts[1];
+        } else {
+          slug = joinLink.trim();
+        }
       }
 
       if (!slug) {
-        alert('Invalid join link or code');
+        alert('Invalid board link');
         setJoining(false);
         return;
       }
 
-      // Navigate to join page
-      navigate(createPageUrl('JoinWorkspace') + `?board=${slug}`);
+      navigate(`/board/${slug}/feedback`);
     } catch (error) {
       console.error('Failed to parse join link:', error);
-      alert('Invalid join link format');
+      alert('Invalid board link format');
       setJoining(false);
     }
   };
@@ -277,18 +286,18 @@ export default function Workspaces() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Invite Link or Code</Label>
+                <Label>Board Link</Label>
                 <Input
                   value={joinLink}
                   onChange={(e) => setJoinLink(e.target.value)}
-                  placeholder="Paste invite link or enter board code"
+                  placeholder="Paste board link"
                   className="mt-1.5"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleJoinBoard();
                   }}
                 />
                 <p className="text-xs text-slate-500 mt-2">
-                  Example: board-slug or full URL
+                  Example: https://your-domain.com/board/your-board/feedback
                 </p>
               </div>
               <div className="flex justify-end gap-3 pt-4">

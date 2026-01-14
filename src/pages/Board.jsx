@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 // Import all section components
@@ -25,6 +27,9 @@ export default function Board() {
   const { slug: routeSlug, section: routeSection } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [accessRequired, setAccessRequired] = useState(false);
+  const [accessSubmitting, setAccessSubmitting] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
   const [slug, setSlug] = useState(null);
   const [section, setSection] = useState(null);
 
@@ -47,6 +52,7 @@ export default function Board() {
     try {
       setLoading(true);
       setError(null);
+      setAccessRequired(false);
 
       if (!routeSlugParam || !routeSectionParam) {
         setError('Invalid board URL');
@@ -78,11 +84,18 @@ export default function Board() {
         } catch (publicError) {
           const status = publicError?.status || publicError?.response?.status;
           if (status === 403) {
-            const results = await base44.entities.Board.filter({ slug: boardSlug });
-            workspace = results[0] || null;
-          } else {
-            throw publicError;
+            try {
+              await base44.auth.me();
+            } catch {
+              const returnUrl = window.location.pathname;
+              base44.auth.redirectToLogin(window.location.origin + returnUrl);
+              return;
+            }
+            setAccessRequired(true);
+            setLoading(false);
+            return;
           }
+          throw publicError;
         }
 
         if (!workspace) {
@@ -108,8 +121,11 @@ export default function Board() {
           if (roles.length > 0) {
             role = roles[0].role;
             isPublicAccess = false;
+          } else if (workspace.visibility === 'restricted') {
+            setAccessRequired(true);
+            setLoading(false);
+            return;
           } else {
-            // Authenticated but no explicit role
             role = 'viewer';
             isPublicAccess = true;
           }
@@ -143,10 +159,78 @@ export default function Board() {
     }
   };
 
+  const handleAccessCodeSubmit = async () => {
+    if (!accessCode.trim() || !slug) return;
+    setAccessSubmitting(true);
+    setError(null);
+    try {
+      const { data } = await base44.functions.invoke('joinBoardWithAccessCode', {
+        slug,
+        access_code: accessCode.trim()
+      });
+
+      if (data?.board) {
+        sessionStorage.setItem('selectedBoard', JSON.stringify(data.board));
+        sessionStorage.setItem('selectedBoardId', data.board.id);
+        sessionStorage.setItem('currentRole', data.role || 'contributor');
+        sessionStorage.setItem('isPublicAccess', 'false');
+        navigate(`/board/${data.board.slug}/feedback`);
+      }
+    } catch (joinError) {
+      console.error('Failed to join with access code:', joinError);
+      setError('Invalid access code. Please try again.');
+    } finally {
+      setAccessSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <LoadingSpinner size="lg" text="Loading board..." />
+      </div>
+    );
+  }
+
+  if (accessRequired) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 p-6">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Enter access code</h2>
+            <p className="text-slate-600 mt-2">
+              This board is private. Enter the access code provided by an admin.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <Input
+              value={accessCode}
+              onChange={(event) => setAccessCode(event.target.value)}
+              placeholder="Access code"
+              className="text-center tracking-[0.3em] uppercase"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') handleAccessCodeSubmit();
+              }}
+            />
+            {error && (
+              <p className="text-sm text-rose-600">{error}</p>
+            )}
+          </div>
+          <Button
+            onClick={handleAccessCodeSubmit}
+            disabled={accessSubmitting || !accessCode.trim()}
+            className="w-full bg-slate-900 hover:bg-slate-800"
+          >
+            {accessSubmitting ? 'Checking...' : 'Join Board'}
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => navigate('/')}
+          >
+            Go Home
+          </Button>
+        </div>
       </div>
     );
   }

@@ -26,6 +26,7 @@ export default function Billing() {
   const [startingTrial, setStartingTrial] = useState(false);
   const [openingPortal, setOpeningPortal] = useState(false);
   const [showBetaModal, setShowBetaModal] = useState(false);
+  const [updatingBetaAccess, setUpdatingBetaAccess] = useState(false);
 
   useEffect(() => {
     document.title = 'base25 - Billing';
@@ -119,6 +120,26 @@ export default function Billing() {
     }
   };
 
+  const handleToggleBetaAccess = async (enabled) => {
+    if (!board) return;
+    setUpdatingBetaAccess(true);
+    try {
+      const { data } = await base44.functions.invoke('setBetaAccess', {
+        board_id: board.id,
+        enabled,
+      });
+      setSummary((prev) => ({
+        ...(prev ?? {}),
+        beta_access_granted_at: data?.beta_access_granted_at ?? (enabled ? new Date().toISOString() : null),
+      }));
+    } catch (error) {
+      console.error('Failed to update beta access:', error);
+      alert('Unable to update beta access.');
+    } finally {
+      setUpdatingBetaAccess(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -191,7 +212,7 @@ export default function Billing() {
                 <div key={service.id} className="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-3">
                   <div>
                     <p className="font-medium text-slate-900">{service.label}</p>
-                    <p className="text-xs text-slate-500">$5 / month when enabled</p>
+                    <p className="text-xs text-slate-500">$10 / month when enabled</p>
                   </div>
                   <Switch
                     checked={selectedServices.has(service.id)}
@@ -245,6 +266,21 @@ export default function Billing() {
                 <div className="flex items-center justify-between">
                   <span>Billable</span>
                   <span className="font-medium text-slate-900">{summary?.billable_interactions ?? 0}</span>
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-slate-900">Beta access</p>
+                    <p className="text-xs text-slate-500">
+                      Unlocks checkout for this board.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={betaGranted}
+                    onCheckedChange={handleToggleBetaAccess}
+                    disabled={updatingBetaAccess}
+                  />
                 </div>
               </div>
               <div className="border-t border-slate-200 pt-3 space-y-2">

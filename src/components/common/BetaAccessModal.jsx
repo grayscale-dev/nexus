@@ -13,39 +13,69 @@ import {
 } from '@/components/ui/dialog';
 
 const defaultForm = {
-  first_name: '',
-  last_name: '',
   email: '',
-  company_name: '',
-  notes: '',
+  estimated_daily_users: '',
+  name: '',
+  company: '',
+  use_case: '',
+  source: '',
 };
 
 export default function BetaAccessModal({ open, onOpenChange, onSubmitted }) {
   const [formData, setFormData] = useState(defaultForm);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [utmFields, setUtmFields] = useState({
+    utm_source: '',
+    utm_medium: '',
+    utm_campaign: '',
+  });
 
   useEffect(() => {
     if (!open) return;
     setFormData(defaultForm);
     setSubmitting(false);
     setSubmitted(false);
+    setErrorMessage('');
+    const params = new URLSearchParams(window.location.search);
+    setUtmFields({
+      utm_source: params.get('utm_source') || '',
+      utm_medium: params.get('utm_medium') || '',
+      utm_campaign: params.get('utm_campaign') || '',
+    });
   }, [open]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!formData.first_name || !formData.last_name || !formData.email || !formData.notes) {
+    const normalizedEmail = formData.email.trim().toLowerCase();
+    const estimatedUsers = Number(formData.estimated_daily_users);
+    if (!normalizedEmail || !Number.isInteger(estimatedUsers) || estimatedUsers < 1) {
+      setErrorMessage('Please enter a valid email and estimated daily users.');
       return;
     }
 
     setSubmitting(true);
+    setErrorMessage('');
     try {
-      await base44.functions.invoke('publicWaitlistSignup', formData);
+      await base44.functions.invoke('publicWaitlistSignup', {
+        email: normalizedEmail,
+        estimated_daily_users: estimatedUsers,
+        name: formData.name.trim() || null,
+        company: formData.company.trim() || null,
+        use_case: formData.use_case.trim() || null,
+        source: formData.source.trim() || null,
+        ...utmFields,
+      });
       setSubmitted(true);
       onSubmitted?.();
     } catch (error) {
       console.error('Failed to submit:', error);
-      alert('Failed to submit. Please try again.');
+      if (error?.message?.includes('429')) {
+        setErrorMessage('Please wait a moment and try again.');
+      } else {
+        setErrorMessage('Something went wrong. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -63,34 +93,11 @@ export default function BetaAccessModal({ open, onOpenChange, onSubmitted }) {
             <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="h-6 w-6 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">You are on the list!</h3>
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">You’re on the waitlist</h3>
             <p className="text-slate-600">We will reach out soon with your beta access.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="beta_first_name">First Name *</Label>
-                <Input
-                  id="beta_first_name"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                  required
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="beta_last_name">Last Name *</Label>
-                <Input
-                  id="beta_last_name"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                  required
-                  className="mt-1.5"
-                />
-              </div>
-            </div>
-
             <div>
               <Label htmlFor="beta_email">Email *</Label>
               <Input
@@ -104,26 +111,68 @@ export default function BetaAccessModal({ open, onOpenChange, onSubmitted }) {
             </div>
 
             <div>
-              <Label htmlFor="beta_company_name">Company Name (Optional)</Label>
+              <Label htmlFor="beta_estimated_users">
+                How many people are going to be accessing your feedback board per day (estimated)?
+              </Label>
               <Input
-                id="beta_company_name"
-                value={formData.company_name}
-                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                id="beta_estimated_users"
+                type="number"
+                min="1"
+                step="1"
+                value={formData.estimated_daily_users}
+                onChange={(e) => setFormData({ ...formData, estimated_daily_users: e.target.value })}
+                required
                 className="mt-1.5"
               />
             </div>
 
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="beta_name">Name (Optional)</Label>
+                <Input
+                  id="beta_name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <Label htmlFor="beta_company">Company / Project name (Optional)</Label>
+                <Input
+                  id="beta_company"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  className="mt-1.5"
+                />
+              </div>
+            </div>
+
             <div>
-              <Label htmlFor="beta_notes">Why do you want early access? *</Label>
+              <Label htmlFor="beta_use_case">Primary use case (Optional)</Label>
               <Textarea
-                id="beta_notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                required
-                placeholder="Tell us about your team and what you're looking for..."
-                className="mt-1.5 min-h-[120px]"
+                id="beta_use_case"
+                value={formData.use_case}
+                onChange={(e) => setFormData({ ...formData, use_case: e.target.value })}
+                placeholder="Tell us what you want to use base25 for..."
+                className="mt-1.5 min-h-[100px]"
               />
             </div>
+
+            <div>
+              <Label htmlFor="beta_source">How did you hear about us? (Optional)</Label>
+              <Input
+                id="beta_source"
+                value={formData.source}
+                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                className="mt-1.5"
+              />
+            </div>
+
+            {errorMessage ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {errorMessage}
+              </div>
+            ) : null}
 
             <Button
               type="submit"

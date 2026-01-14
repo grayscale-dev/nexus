@@ -78,7 +78,6 @@ Deno.serve(async (req) => {
       }
 
       const userId = authData.user.id;
-      const email = authData.user.email || "";
 
       const { data: role } = await supabaseAdmin
         .from("board_roles")
@@ -89,36 +88,13 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!role) {
-        const domain = email.split("@")[1] || "";
-        const { data: ruleMatch } = await supabaseAdmin
-          .from("board_access_rules")
-          .select("id, pattern, pattern_type")
-          .eq("board_id", data.id)
-          .eq("is_active", true);
-
-        const matchesRule = (ruleMatch || []).some((rule) => {
-          if (rule.pattern_type === "exact") {
-            return email.toLowerCase() === rule.pattern.toLowerCase();
-          }
-          if (rule.pattern_type === "domain") {
-            const ruleDomain = rule.pattern.replace(/^[*@]+/, "").toLowerCase();
-            return domain.toLowerCase() === ruleDomain;
-          }
-          if (rule.pattern_type === "substring") {
-            return email.toLowerCase().includes(rule.pattern.toLowerCase());
-          }
-          return false;
-        });
-
-        if (!matchesRule) {
-          return new Response(
-            JSON.stringify({ error: "This board is not accessible" }),
-            {
-              status: 403,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            },
-          );
-        }
+        return new Response(
+          JSON.stringify({ error: "This board is not accessible" }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
     }
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Settings, Users, Key, Shield, Plus, Trash2, 
-  Save, ChevronRight, Mail, Globe, Lock, Copy, Check 
+  Settings, Users, Key, Trash2, 
+  Save, Copy, Check 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,13 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -59,14 +52,12 @@ export default function WorkspaceSettings() {
   
   // Access management
   const [members, setMembers] = useState([]);
-  const [accessRules, setBoardAccessRules] = useState([]);
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [showAddRule, setShowAddRule] = useState(false);
-  const [newMemberEmail, setNewMemberEmail] = useState('');
-  const [newMemberRole, setNewMemberRole] = useState('viewer');
-  const [newRulePattern, setNewRulePattern] = useState('');
-  const [newRuleRole, setNewRuleRole] = useState('viewer');
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [accessCodeStatus, setAccessCodeStatus] = useState({ hasCode: false, expiresAt: null });
+  const [accessCodeExpiry, setAccessCodeExpiry] = useState('7d');
+  const [generatedAccessCode, setGeneratedAccessCode] = useState('');
+  const [creatingAccessCode, setCreatingAccessCode] = useState(false);
+  const [updatingMemberId, setUpdatingMemberId] = useState(null);
 
   useEffect(() => {
     const storedWorkspace = sessionStorage.getItem('selectedBoard');
@@ -94,12 +85,16 @@ export default function WorkspaceSettings() {
 
   const loadAccessData = async (workspaceId) => {
     try {
-      const [rolesData, rulesData] = await Promise.all([
+      const [rolesData, accessCodeData] = await Promise.all([
         base44.entities.BoardRole.filter({ board_id: workspaceId }),
-        base44.entities.BoardAccessRule.filter({ board_id: workspaceId })
+        base44.functions.invoke('getBoardAccessCodeStatus', { board_id: workspaceId })
       ]);
       setMembers(rolesData);
-      setBoardAccessRules(rulesData);
+      const status = accessCodeData?.data;
+      setAccessCodeStatus({
+        hasCode: Boolean(status?.has_code),
+        expiresAt: status?.expires_at ?? null
+      });
     } catch (error) {
       console.error('Failed to load access data:', error);
     } finally {
@@ -190,38 +185,6 @@ export default function WorkspaceSettings() {
     }
   };
 
-  const handleAddMember = async () => {
-    if (!newMemberEmail || !workspace) return;
-    
-    try {
-      const currentUser = await base44.auth.me();
-      
-      // Check for existing role
-      const existing = members.find(m => m.email === newMemberEmail);
-      if (existing) {
-        await base44.entities.BoardRole.update(existing.id, { role: newMemberRole });
-      } else {
-        // Create role with placeholder user_id - will be linked when user joins
-        await base44.entities.BoardRole.create({
-          board_id: workspace.id,
-          user_id: newMemberEmail, // Use email as placeholder until user registers
-          email: newMemberEmail,
-          role: newMemberRole,
-          assigned_via: 'explicit'
-        });
-      }
-      
-      setNewMemberEmail('');
-      setNewMemberRole('viewer');
-      setShowAddMember(false);
-      loadAccessData(workspace.id);
-      alert(`Access granted to ${newMemberEmail}. They can log in to this board with their new role.`);
-    } catch (error) {
-      console.error('Failed to add member:', error);
-      alert('Failed to grant access. Please try again.');
-    }
-  };
-
   const handleRemoveMember = async (memberId) => {
     if (!confirm('Remove this member\'s access?')) return;
     
@@ -233,35 +196,39 @@ export default function WorkspaceSettings() {
     }
   };
 
-  const handleAddRule = async () => {
-    if (!newRulePattern || !workspace) return;
-    
+  const handleCreateAccessCode = async () => {
+    if (!workspace) return;
+    setCreatingAccessCode(true);
     try {
-      await base44.entities.BoardAccessRule.create({
+      const { data } = await base44.functions.invoke('setBoardAccessCode', {
         board_id: workspace.id,
-        pattern: newRulePattern,
-        pattern_type: 'domain',
-        default_role: newRuleRole,
-        is_active: true
+        expires_in: accessCodeExpiry
       });
-      
-      setNewRulePattern('');
-      setNewRuleRole('viewer');
-      setShowAddRule(false);
-      loadAccessData(workspace.id);
+      setGeneratedAccessCode(data?.access_code ?? '');
+      setAccessCodeStatus({
+        hasCode: true,
+        expiresAt: data?.expires_at ?? null
+      });
     } catch (error) {
-      console.error('Failed to add rule:', error);
+      console.error('Failed to create access code:', error);
+      alert('Failed to create access code. Please try again.');
+    } finally {
+      setCreatingAccessCode(false);
     }
   };
 
-  const handleRemoveRule = async (ruleId) => {
-    if (!confirm('Remove this access rule?')) return;
-    
+  const handleUpdateMemberRole = async (memberId, nextRole) => {
+    setUpdatingMemberId(memberId);
     try {
-      await base44.entities.BoardAccessRule.delete(ruleId);
-      loadAccessData(workspace.id);
+      await base44.entities.BoardRole.update(memberId, { role: nextRole });
+      setMembers((prev) => prev.map((member) => (
+        member.id === memberId ? { ...member, role: nextRole } : member
+      )));
     } catch (error) {
-      console.error('Failed to remove rule:', error);
+      console.error('Failed to update member role:', error);
+      alert('Failed to update role. Please try again.');
+    } finally {
+      setUpdatingMemberId(null);
     }
   };
 
@@ -317,7 +284,7 @@ export default function WorkspaceSettings() {
           </TabsTrigger>
           <TabsTrigger value="access" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Access
+            Users
           </TabsTrigger>
           <TabsTrigger value="api" className="flex items-center gap-2">
             <Key className="h-4 w-4" />
@@ -517,79 +484,95 @@ export default function WorkspaceSettings() {
         </TabsContent>
 
         <TabsContent value="access" className="space-y-6">
-          {/* Access Rules */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Email Domain Rules</CardTitle>
-                <CardDescription>Automatically assign roles when users log in with matching emails</CardDescription>
-              </div>
-              <Button variant="outline" onClick={() => setShowAddRule(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Rule
-              </Button>
+            <CardHeader>
+              <CardTitle>Access code</CardTitle>
+              <CardDescription>
+                Require a code for users to join your private board.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              {accessRules.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-4">
-                  No access rules configured
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Pattern</TableHead>
-                      <TableHead>Default Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-12"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {accessRules.map((rule) => (
-                      <TableRow key={rule.id}>
-                        <TableCell className="font-mono text-sm">{rule.pattern}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{rule.default_role}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={rule.is_active ? 'success' : 'default'} dot>
-                            {rule.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleRemoveRule(rule.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+            <CardContent className="space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p className="text-sm text-slate-500">
+                    {accessCodeStatus.hasCode
+                      ? 'Access code is active.'
+                      : 'No access code created yet.'}
+                  </p>
+                  {accessCodeStatus.expiresAt ? (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Expires on {new Date(accessCodeStatus.expiresAt).toLocaleString()}
+                    </p>
+                  ) : accessCodeStatus.hasCode ? (
+                    <p className="text-xs text-slate-500 mt-1">Never expires.</p>
+                  ) : null}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Select value={accessCodeExpiry} onValueChange={setAccessCodeExpiry}>
+                    <SelectTrigger className="w-40" disabled={visibility !== 'restricted'}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24h">24 hours</SelectItem>
+                      <SelectItem value="7d">7 days</SelectItem>
+                      <SelectItem value="30d">30 days</SelectItem>
+                      <SelectItem value="never">Never</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={handleCreateAccessCode}
+                    disabled={creatingAccessCode || visibility !== 'restricted'}
+                    className="bg-slate-900 hover:bg-slate-800"
+                  >
+                    {creatingAccessCode
+                      ? 'Creating...'
+                      : accessCodeStatus.hasCode
+                        ? 'Generate new code'
+                        : 'Create access code'}
+                  </Button>
+                </div>
+              </div>
+              {generatedAccessCode ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-sm font-semibold text-emerald-900">
+                    Share this access code
+                  </p>
+                  <p className="text-xs text-emerald-700 mt-1">
+                    This code is shown only once. Copy it now.
+                  </p>
+                  <div className="mt-3 flex flex-col sm:flex-row gap-3 items-center">
+                    <Input
+                      value={generatedAccessCode}
+                      readOnly
+                      className="font-mono tracking-[0.3em] text-center uppercase"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedAccessCode);
+                      }}
+                    >
+                      Copy code
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+              <p className="text-xs text-slate-500">
+                Users must log in and enter the code on the board page to get contributor access.
+                {visibility !== 'restricted' ? ' Switch visibility to Restricted to require a code.' : ''}
+              </p>
             </CardContent>
           </Card>
 
-          {/* Individual Members */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Individual Access</CardTitle>
-                <CardDescription>Grant specific roles to team members</CardDescription>
-              </div>
-              <Button variant="outline" onClick={() => setShowAddMember(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Grant Access
-              </Button>
+            <CardHeader>
+              <CardTitle>Users</CardTitle>
+              <CardDescription>Manage permissions for existing board members.</CardDescription>
             </CardHeader>
             <CardContent>
               {members.length === 0 ? (
                 <p className="text-sm text-slate-500 text-center py-4">
-                  No individual members configured
+                  No users yet
                 </p>
               ) : (
                 <Table>
@@ -597,7 +580,7 @@ export default function WorkspaceSettings() {
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Role</TableHead>
-                      <TableHead>Assigned Via</TableHead>
+                      <TableHead>Assigned via</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -606,27 +589,31 @@ export default function WorkspaceSettings() {
                       <TableRow key={member.id}>
                         <TableCell>{member.email}</TableCell>
                         <TableCell>
-                          <Badge 
-                            variant={
-                              member.role === 'admin' ? 'primary' : 
-                              member.role === 'support' ? 'purple' : 
-                              'default'
-                            }
+                          <Select
+                            value={member.role}
+                            onValueChange={(value) => handleUpdateMemberRole(member.id, value)}
                           >
-                            {member.role}
-                          </Badge>
+                            <SelectTrigger className="w-40" disabled={updatingMemberId === member.id}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="viewer">Viewer</SelectItem>
+                              <SelectItem value="contributor">Contributor</SelectItem>
+                              <SelectItem value="support">Support</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">
-                            {member.assigned_via === 'rule' ? 'Rule' : 'Explicit'}
-                          </Badge>
+                          <Badge variant="outline">{member.assigned_via}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
                             onClick={() => handleRemoveMember(member.id)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            disabled={updatingMemberId === member.id}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -660,89 +647,6 @@ export default function WorkspaceSettings() {
         </TabsContent>
       </Tabs>
 
-      {/* Add Member Modal */}
-      <Dialog open={showAddMember} onOpenChange={setShowAddMember}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Grant Access</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Email Address</Label>
-              <Input 
-                value={newMemberEmail}
-                onChange={(e) => setNewMemberEmail(e.target.value)}
-                placeholder="user@example.com"
-                className="mt-1.5"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                User must log in with this email to receive their role.
-              </p>
-            </div>
-            <div>
-              <Label>Role</Label>
-              <Select value={newMemberRole} onValueChange={setNewMemberRole}>
-                <SelectTrigger className="mt-1.5">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                  <SelectItem value="contributor">Contributor</SelectItem>
-                  <SelectItem value="support">Support</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowAddMember(false)}>Cancel</Button>
-            <Button onClick={handleAddMember} className="bg-slate-900 hover:bg-slate-800">
-              Grant Access
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Rule Modal */}
-      <Dialog open={showAddRule} onOpenChange={setShowAddRule}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Access Rule</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Email Pattern</Label>
-              <Input 
-                value={newRulePattern}
-                onChange={(e) => setNewRulePattern(e.target.value)}
-                placeholder="@company.com or *@domain.com"
-                className="mt-1.5"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Use @domain.com to match all emails ending with that domain
-              </p>
-            </div>
-            <div>
-              <Label>Default Role</Label>
-              <Select value={newRuleRole} onValueChange={setNewRuleRole}>
-                <SelectTrigger className="mt-1.5">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                  <SelectItem value="contributor">Contributor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowAddRule(false)}>Cancel</Button>
-            <Button onClick={handleAddRule} className="bg-slate-900 hover:bg-slate-800">
-              Add Rule
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
