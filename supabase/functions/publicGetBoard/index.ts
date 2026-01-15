@@ -75,7 +75,14 @@ Deno.serve(async (req) => {
           errorName: authError?.name,
         });
         return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
+          JSON.stringify({
+            error: "Unauthorized",
+            debug: {
+              code: "AUTH_GET_USER_FAILED",
+              message: authError?.message || null,
+              status: authError?.status || null,
+            },
+          }),
           {
             status: 401,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
