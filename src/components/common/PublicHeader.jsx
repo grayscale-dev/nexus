@@ -4,6 +4,7 @@ import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { createPageUrl } from '@/utils';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
 const navLinks = [
   { label: 'Home', page: 'Home' },
@@ -22,7 +23,7 @@ export default function PublicHeader({ currentPage = 'Home', onRequestAccess }) 
           <img
             src="/base25-logo.png"
             alt="base25"
-            className="h-8 w-8 object-contain"
+            className="h-8 w-8 object-contain dark:invert"
           />
           <span className="text-lg font-bold text-slate-900">base25</span>
         </Link>
@@ -54,6 +55,10 @@ export default function PublicHeader({ currentPage = 'Home', onRequestAccess }) 
           >
             Request access
           </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
         </div>
 
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>

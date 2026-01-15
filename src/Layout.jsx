@@ -18,6 +18,7 @@ import { createPageUrl } from '@/utils';
 import { boardUrl } from '@/components/utils/boardUrl';
 import { cn } from '@/lib/utils';
 import { BoardProvider } from '@/components/context/BoardContext';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
 const navItems = [
   { name: 'Feedback', icon: MessageSquareText, page: 'Feedback' },
@@ -288,6 +289,7 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Right: User menu & Admin links */}
             <div className="flex items-center gap-2">
+                <ThemeToggle />
                 {/* Login prompt for public viewers */}
                 {isPublicViewing && !user && (
                   <Button 

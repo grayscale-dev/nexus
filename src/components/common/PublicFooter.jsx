@@ -6,7 +6,7 @@ export default function PublicFooter() {
           <img
             src="/base25-logo.png"
             alt="base25"
-            className="h-6 w-6 object-contain"
+            className="h-6 w-6 object-contain dark:invert"
           />
           <span className="font-semibold text-slate-900">base25</span>
         </div>

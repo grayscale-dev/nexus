@@ -202,9 +202,9 @@ export default function Workspaces() {
               <img 
                 src="/base25-logo.png" 
                 alt="Nexus" 
-                className="h-8 w-8 object-contain"
+                className="h-8 w-8 object-contain dark:invert"
               />
-              <span className="text-lg font-semibold text-slate-900">nexus</span>
+              <span className="text-lg font-semibold text-slate-900">base25</span>
             </div>
           
           <div className="flex items-center gap-3">

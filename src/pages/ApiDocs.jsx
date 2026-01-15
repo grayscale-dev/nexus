@@ -295,12 +295,12 @@ export default function ApiDocs() {
               <p className="text-sm text-slate-600">
                 All API requests require authentication using a Bearer token in the Authorization header.
               </p>
-              <div className="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+              <div className="bg-slate-900 dark:bg-[#2f2f2f] rounded-lg p-4 overflow-x-auto">
                 <code className="text-sm text-slate-100">
                   Authorization: Bearer YOUR_API_TOKEN
                 </code>
               </div>
-              <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg text-sm text-amber-800">
+              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-[#3a2f1a] rounded-lg text-sm text-amber-800 dark:text-amber-200">
                 <Zap className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <span>Rate limit: 1,000 requests per hour per token</span>
               </div>
@@ -316,7 +316,7 @@ export default function ApiDocs() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+              <div className="bg-slate-900 dark:bg-[#2f2f2f] rounded-lg p-4 overflow-x-auto">
                 <code className="text-sm text-slate-100">
                   https://api.yourplatform.com/v1/boards/{workspace?.id}
                 </code>
@@ -340,7 +340,7 @@ export default function ApiDocs() {
                   onOpenChange={() => setExpandedEndpoint(expandedEndpoint === index ? null : index)}
                 >
                   <CollapsibleTrigger asChild>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-[#3a3a3a] rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-[#444444] transition-colors">
                       <div className="flex items-center gap-3">
                         <Badge 
                           variant={endpoint.method === 'GET' ? 'primary' : 'success'}
@@ -378,7 +378,7 @@ export default function ApiDocs() {
                           <div className="space-y-2">
                             {endpoint.params.map(param => (
                               <div key={param.name} className="flex gap-4 text-sm">
-                                <code className="text-blue-600">{param.name}</code>
+                                <code className="text-blue-600 dark:text-blue-300">{param.name}</code>
                                 <span className="text-slate-400">{param.type}</span>
                                 <span className="text-slate-600">{param.description}</span>
                               </div>
@@ -390,7 +390,7 @@ export default function ApiDocs() {
                       {endpoint.body && (
                         <div>
                           <h4 className="text-sm font-medium text-slate-700 mb-2">Request Body</h4>
-                          <pre className="bg-slate-900 rounded-lg p-4 overflow-x-auto text-sm text-slate-100">
+                          <pre className="bg-slate-900 dark:bg-[#2f2f2f] rounded-lg p-4 overflow-x-auto text-sm text-slate-100">
                             {endpoint.body}
                           </pre>
                         </div>
@@ -398,7 +398,7 @@ export default function ApiDocs() {
                       
                       <div>
                         <h4 className="text-sm font-medium text-slate-700 mb-2">Response</h4>
-                        <pre className="bg-slate-900 rounded-lg p-4 overflow-x-auto text-sm text-slate-100">
+                        <pre className="bg-slate-900 dark:bg-[#2f2f2f] rounded-lg p-4 overflow-x-auto text-sm text-slate-100">
                           {endpoint.response}
                         </pre>
                       </div>
@@ -488,11 +488,11 @@ export default function ApiDocs() {
           {createdToken ? (
             <div className="space-y-4">
               <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                <p className="text-sm text-emerald-700 mb-2">
+                <p className="text-sm text-emerald-700 dark:text-emerald-200 mb-2">
                   Token created successfully! Copy it now - you won't be able to see it again.
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 text-sm bg-white p-2 rounded border border-emerald-200 truncate">
+                  <code className="flex-1 text-sm bg-white dark:bg-[#2f2f2f] p-2 rounded border border-emerald-200 dark:border-emerald-400/30 truncate">
                     {createdToken}
                   </code>
                   <Button 
@@ -532,7 +532,7 @@ export default function ApiDocs() {
                           checked={newTokenPerms.includes(perm.value)}
                           onCheckedChange={() => togglePermission(perm.value)}
                         />
-                        <label htmlFor={perm.value} className="text-sm cursor-pointer">
+                        <label htmlFor={perm.value} className="text-sm cursor-pointer text-slate-700 dark:text-slate-200">
                           {perm.label}
                         </label>
                       </div>

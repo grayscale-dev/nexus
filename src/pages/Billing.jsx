@@ -180,20 +180,20 @@ export default function Billing() {
         </div>
 
         {!betaGranted && (
-          <Card className="border-amber-200 bg-amber-50">
+          <Card className="border-amber-200 bg-amber-50 dark:border-amber-400/40 dark:bg-[#3a2f1a]">
             <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-start gap-3">
-                <ShieldAlert className="h-6 w-6 text-amber-600 mt-1" />
+                <ShieldAlert className="h-6 w-6 text-amber-600 dark:text-amber-300 mt-1" />
                 <div>
-                  <p className="font-semibold text-amber-800">Invite-only beta</p>
-                  <p className="text-sm text-amber-700">
+                  <p className="font-semibold text-amber-800 dark:text-amber-200">Invite-only beta</p>
+                  <p className="text-sm text-amber-700 dark:text-amber-200/80">
                     Request access to unlock the 7-day trial.
                   </p>
                 </div>
               </div>
               <Button
                 variant="outline"
-                className="border-amber-300 text-amber-800"
+                className="border-amber-300 text-amber-800 dark:border-amber-300/60 dark:text-amber-200"
                 onClick={() => setShowBetaModal(true)}
               >
                 Request access
@@ -224,7 +224,7 @@ export default function Billing() {
                 <Button
                   onClick={handleStartTrial}
                   disabled={startingTrial || !betaGranted}
-                  className="bg-slate-900 text-white hover:bg-slate-800"
+                  className="bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-100 dark:disabled:bg-[#444444] dark:disabled:text-slate-200"
                 >
                   <Sparkles className="mr-2 h-4 w-4" />
                   {startingTrial ? 'Starting...' : 'Start free trial'}
