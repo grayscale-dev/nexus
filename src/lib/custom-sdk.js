@@ -9,6 +9,10 @@ const getEnvVar = (key, defaultValue) => {
   return process.env[key] || defaultValue;
 };
 
+const isDevEnv =
+  (typeof import.meta !== "undefined" && import.meta.env?.DEV) ||
+  process.env.NODE_ENV === "development";
+
 // Create service role client for admin operations (bypasses RLS)
 const supabaseUrl = getEnvVar("VITE_SUPABASE_URL", "http://127.0.0.1:54321");
 const supabaseServiceKey = getEnvVar(
@@ -529,7 +533,7 @@ export class UserEntity extends CustomEntity {
    * @param {string} provider - OAuth provider (google, github, etc.) or 'dev' for development
    * @returns {Promise<void>}
    */
-  async login(provider = "dev") {
+  async login(provider) {
     // For local development, use a simple email/password flow
     if (provider === "dev") {
       // Create a development user if it doesn't exist
@@ -655,7 +659,16 @@ export class UserEntity extends CustomEntity {
   }
 
   async redirectToLogin(redirectTo = window.location.href) {
-    const provider = getEnvVar("VITE_AUTH_PROVIDER", "dev");
+    let provider = getEnvVar("VITE_AUTH_PROVIDER");
+    if (!provider) {
+      if (isDevEnv) {
+        provider = "dev";
+      } else {
+        throw new Error(
+          "VITE_AUTH_PROVIDER is not set. Configure an OAuth provider for production."
+        );
+      }
+    }
     if (redirectTo) {
       localStorage.setItem("post_login_redirect", redirectTo);
     }
